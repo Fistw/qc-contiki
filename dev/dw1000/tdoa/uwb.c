@@ -11,3 +11,12 @@ struct uwbConfig_s *uwbGetConfig()
     config.positionEnabled = 1;
     return &config;
 }
+
+static dwDevice_t device = {
+
+};
+
+dwDevice_t* uwbGetDevice()
+{
+    return &device;
+}

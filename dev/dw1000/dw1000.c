@@ -126,15 +126,16 @@ static void
 rx_ok_cb(const dwt_cb_data_t *cb_data)
 {
   /*LEDS_TOGGLE(LEDS_GREEN); */
-#if DW1000_RANGING_ENABLED
-  if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
-    dw1000_rng_ok_cb(cb_data);
-    return;
-  }
-  /* got a non-ranging packet: reset the ranging module if */
-  /* it was in the middle of ranging */
-  dw1000_range_reset();
-#endif
+  #if DW1000_RANGING_ENABLED
+    // if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
+    //   dw1000_rng_ok_cb(cb_data);
+    //   return;
+    // }
+    // /* got a non-ranging packet: reset the ranging module if */
+    // /* it was in the middle of ranging */
+    // dw1000_range_reset();
+    rx_rng_ok_cb(cb_data);
+  #endif
 
   data_len = cb_data->datalength - DW1000_CRC_LEN;
   /* Set the appropriate event flag */
@@ -511,6 +512,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
     /* Copy the received frame to packetbuf */
     dw1000_radio_read(packetbuf_dataptr(), data_len);
+    tdoa3UwbReceived(packetbuf_dataptr(), data_len); //data_len不包括2字节的crc
     packetbuf_set_datalen(data_len);
 
     /* Re-enable RX to keep listening */

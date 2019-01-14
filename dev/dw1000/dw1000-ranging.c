@@ -480,7 +480,7 @@ dw1000_rng_ok_cb(const dwt_cb_data_t *cb_data)
       status = 4;
       goto abort;
     }
-
+  
     /* Retrieve poll transmission and response reception timestamps. */
     ss_poll_tx_ts = dwt_readtxtimestamplo32();
     ss_resp_rx_ts = dwt_readrxtimestamplo32();

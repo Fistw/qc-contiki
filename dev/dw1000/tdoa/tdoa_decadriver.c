@@ -56,3 +56,17 @@ void dwStartReceive(dwDevice_t *dev)
     dwSpiWrite(dev, SYS_CTRL, NO_SUB, dev->sysctrl, LEN_SYS_CTRL);
     dwt_readrxdata(buf, buf_len, 0);
 }
+
+void rx_rng_ok_cb(const dwt_cb_data_t *cb_data)
+{
+    uint16_t pkt_len = cb_data->datalength;
+    // if(pkt_len != 12) {
+    //     goto abort;
+    // }
+    dwt_readrxtimestamp(rxTime.raw);
+// abort: /* In case we got anything unexpected */
+//   dwt_forcetrxoff();
+//   dwt_rxreset(); /* just to check */
+//   dwt_setrxtimeout(0);
+//   dwt_rxenable(0);
+}

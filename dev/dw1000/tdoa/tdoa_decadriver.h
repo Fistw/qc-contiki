@@ -262,3 +262,5 @@ void dwGetSystemTimestamp(dwDevice_t *dev, dwTime_t *time);
 
 
 // #endif //__LIBDW1000_H__
+static dwTime_t rxTime = {.full = 0};
+void rx_rng_ok_cb(const dwt_cb_data_t *cb_data);
