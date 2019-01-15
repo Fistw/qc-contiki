@@ -15,16 +15,14 @@
 #include "uwb.h"
 #include "libdw1000.h"
 
-
 // 根据设定的协议，定义数据包结构体及相关变量
 
-
-#define ANCHOR_LIST_UPDATE_INTERVAL 1000;  //Anchor列表更新间隔
+#define ANCHOR_LIST_UPDATE_INTERVAL 1000; //Anchor列表更新间隔
 
 #define ANCHOR_STORAGE_COUNT 16
 #define REMOTE_TX_MAX_COUNT 8 // REMOTE_TX_MAX_COUNT < ANCHOR_STORAGE_COUNT
 
-#define ID_COUNT 256  //用8位整型来存储id，最多也就256个
+#define ID_COUNT 256 //用8位整型来存储id，最多也就256个
 #define ID_WITHOUT_CONTEXT 0xff
 
 #define SYSTEM_TX_FREQ 400.0
@@ -66,11 +64,11 @@ static struct ctx_s
     int anchorId;
 
     // Header部分的数据
-    uint8_t seqNr; // 最近发送的包的序列号
+    uint8_t seqNr;   // 最近发送的包的序列号
     uint32_t txTime; // 最近发送的包的发送时间戳，由UWB标记
 
     uint32_t nextTxTick; // 下一次发送包的发送时间(system clock ticks)
-    int averageTxDelay; // ms
+    int averageTxDelay;  // ms
 
     // List of ids to transmit in remote data section
     uint8_t remoteTxId[REMOTE_TX_MAX_COUNT];
@@ -80,10 +78,10 @@ static struct ctx_s
     uint32_t nextAnchorListUpdate; //下次列表更新的时间点
 
     // Remote anchor data
-    uint8_t anchorCtxLookup[ID_COUNT]; //用来标记各个Anchor有没有Context 信息存储，以及存储对应于anchorCtx的第几个空间中
+    uint8_t anchorCtxLookup[ID_COUNT];               //用来标记各个Anchor有没有Context 信息存储，以及存储对应于anchorCtx的第几个空间中
     anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT]; //存储在本地的remote anchor context信息
-    uint8_t anchorRxCount[ID_COUNT]; //这个列表储存收到其他Anchor发送包的次数，比如收到过id为a的Anchor发送的数据，anchorRxCount[a]就为收到过的次数
-} ctx; // 定义了一个ctx_s的结构体变量 ctx
+    uint8_t anchorRxCount[ID_COUNT];                 //这个列表储存收到其他Anchor发送包的次数，比如收到过id为a的Anchor发送的数据，anchorRxCount[a]就为收到过的次数
+} ctx;                                               // 定义了一个ctx_s的结构体变量 ctx
 
 // Packet formats
 #define PACKET_TYPE_TDOA3 0x30
@@ -232,7 +230,7 @@ static void updateAnchorLists()
     // Randomize which anchors to use
 
     static uint8_t availableId[ID_COUNT]; // 用来统计收到过数据的Anchor的id，也即周边看见看见的Anchor有哪些
-    static bool availableUsed[ID_COUNT]; // 临时变量，下面循环中表示该id是否已被添加过
+    static bool availableUsed[ID_COUNT];  // 临时变量，下面循环中表示该id是否已被添加过
     memset(availableId, 0, sizeof(availableId));
     memset(availableUsed, 0, sizeof(availableUsed));
     int availableCount = 0; // 临时变量，用来记录上面两个列表中实际有多少个id
@@ -252,7 +250,7 @@ static void updateAnchorLists()
 
     // Out of all anchors that we have received messages from, pick two randomized subsets for storage and TX ids
     uint8_t remoteTXIdIndex = 0; // 临时变量
-    uint8_t contextIndex = 0; //临时变量
+    uint8_t contextIndex = 0;    //临时变量
 
     // 总共挑选ANCHOR_STORAGE_COUNT个id，每次挑选一个
     for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++)
@@ -311,171 +309,197 @@ static void updateAnchorLists()
     purgeData();
 }
 
-static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxSeqNr, uint32_t remoteTx, uint32_t rx)
+static double calculateClockCorrection(anchorContext_t *anchorCtx, int remoteTxSeqNr, uint32_t remoteTx, uint32_t rx)
 {
-  double result = 0.0d;
+    double result = 0.0d;
 
-  // Assigning to uint32_t truncates the diffs and takes care of wrapping clocks
-  uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
-  uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
+    // Assigning to uint32_t truncates the diffs and takes care of wrapping clocks
+    uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
+    uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
 
-  if (tickCountRemote != 0) {
-    result = (double)tickCountLocal / (double)tickCountRemote;
-  }
+    if (tickCountRemote != 0)
+    {
+        result = (double)tickCountLocal / (double)tickCountRemote;
+    }
 
-  return result;
+    return result;
 }
 
-static void fillClockCorrectionBucket(anchorContext_t* anchorCtx) {
-    if (anchorCtx->clockCorrectionBucket < CLOCK_CORRECTION_BUCKET_MAX) {
-      anchorCtx->clockCorrectionBucket++;
+static void fillClockCorrectionBucket(anchorContext_t *anchorCtx)
+{
+    if (anchorCtx->clockCorrectionBucket < CLOCK_CORRECTION_BUCKET_MAX)
+    {
+        anchorCtx->clockCorrectionBucket++;
     }
 }
 
-static bool emptyClockCorrectionBucket(anchorContext_t* anchorCtx) {
-    if (anchorCtx->clockCorrectionBucket > 0) {
-      anchorCtx->clockCorrectionBucket--;
-      return false;
+static bool emptyClockCorrectionBucket(anchorContext_t *anchorCtx)
+{
+    if (anchorCtx->clockCorrectionBucket > 0)
+    {
+        anchorCtx->clockCorrectionBucket--;
+        return false;
     }
 
     return true;
 }
 
-static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrection) {
-  const double diff = clockCorrection - anchorCtx->clockCorrection;
-  bool sampleIsAccepted = false;
-
-  if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE) {
-    // LP filter
-    anchorCtx->clockCorrection = anchorCtx->clockCorrection * (1.0d - CLOCK_CORRECTION_FILTER) + clockCorrection * CLOCK_CORRECTION_FILTER;
-
-    fillClockCorrectionBucket(anchorCtx);
-    sampleIsAccepted = true;
-  } else {
-    if (emptyClockCorrectionBucket(anchorCtx)) {
-      if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX) {
-        anchorCtx->clockCorrection = clockCorrection;
-      }
-    }
-  }
-
-  return sampleIsAccepted;
-}
-
-static bool extractFromPacket(const rangePacket3_t* rangePacket, uint32_t* remoteRx, uint8_t* remoteRxSeqNr) {
-  const void* anchorDataPtr = &rangePacket->remoteAnchorData;
-  //chenxin?这个循环什么意思，难道有多个remote date section段？
-  for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++) {
-    remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*)anchorDataPtr;
-
-    const uint8_t id = anchorData->id;
-    if (id == ctx.anchorId) {
-      *remoteRxSeqNr = anchorData->seq & 0x7f;//chenxin:这是作为发包方的远端基站收到的此基站上一次包的序列号，seq第一位是hasDistance，后七位为序列号
-      *remoteRx = anchorData->rxTimeStamp;//chenxin:这是作为发包方的远端基站收到的此基站上一次包的时间
-      return true;
-    }
-
-    bool hasDistance = ((anchorData->seq & 0x80) != 0);
-    //chenxin?remote data section不止一段
-    if (hasDistance) {
-      anchorDataPtr += sizeof(remoteAnchorDataFull_t);
-    } else {
-      anchorDataPtr += sizeof(remoteAnchorDataShort_t);
-    }
-  }
-
-  return false;
-}
-
-static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
-{//chenxin:好像是计算基站0，1之间的tof，不过这样的话clockCorrection也就是基站0，1之间的了
-  // Check that the remote received seq nr is our latest tx seq nr
-  if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d) {
-    uint32_t localTime = rx - ctx.txTime;
-    uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
-    uint32_t distance = (localTime - remoteTime) / 2;
-
-    return distance & 0xfffful;
-  } else {
-    return 0;
-  }
-}
-
-static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
+static bool updateClockCorrection(anchorContext_t *anchorCtx, double clockCorrection)
 {
-  const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
-  ctx.anchorRxCount[remoteAnchorId]++;
-  anchorContext_t* anchorCtx = getContext(remoteAnchorId);
-  if (anchorCtx) {
-    const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket->payload;
+    const double diff = clockCorrection - anchorCtx->clockCorrection;
+    bool sampleIsAccepted = false;
 
-    uint32_t remoteTx = rangePacket->header.txTimeStamp;
-    uint8_t remoteTxSeqNr = rangePacket->header.seq;
+    if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE)
+    {
+        // LP filter
+        anchorCtx->clockCorrection = anchorCtx->clockCorrection * (1.0d - CLOCK_CORRECTION_FILTER) + clockCorrection * CLOCK_CORRECTION_FILTER;
 
-    double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
-    if (updateClockCorrection(anchorCtx, clockCorrection)) {
-      anchorCtx->isDataGoodForTransmission = true;
-
-      uint32_t remoteRx = 0;
-      uint8_t remoteRxSeqNr = 0;
-      bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
-      if (dataFound) {
-        uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
-
-        // TODO krri Remove outliers in distances
-        if (distance > MIN_TOF) {
-          anchorCtx->distance = distance;
-        //   anchorCtx->distanceUpdateTime = xTaskGetTickCount();
-          anchorCtx->distanceUpdateTime = clock_time();
+        fillClockCorrectionBucket(anchorCtx);
+        sampleIsAccepted = true;
+    }
+    else
+    {
+        if (emptyClockCorrectionBucket(anchorCtx))
+        {
+            if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX)
+            {
+                anchorCtx->clockCorrection = clockCorrection;
+            }
         }
-      }
-    } else {
-      anchorCtx->isDataGoodForTransmission = false;
     }
-    //chenxin:利用收到目的基站的最新包更新目的基站的上下文
-    anchorCtx->rxTimeStamp = rxTime;
-    anchorCtx->seqNr = remoteTxSeqNr;
-    anchorCtx->txTimeStamp = remoteTx;
-  }
+
+    return sampleIsAccepted;
 }
 
-static void handleRxPacket(const uint8_t* packetbuf, const uint16_t data_len)
+static bool extractFromPacket(const rangePacket3_t *rangePacket, uint32_t *remoteRx, uint8_t *remoteRxSeqNr)
 {
-  static packet_t rxPacket;
-  packet_t* prxPacket = &rxPacket;
-  int dataLength = data_len;
-  for(int i=0; i<data_len; i++)
-  {
-      prxPacket[i] = packetbuf[i];
-  }
-//   dwTime_t rxTime = { .full = 0 };
+    const void *anchorDataPtr = &rangePacket->remoteAnchorData;
+    //chenxin?这个循环什么意思，难道有多个remote date section段？
+    for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++)
+    {
+        remoteAnchorDataFull_t *anchorData = (remoteAnchorDataFull_t *)anchorDataPtr;
 
-//   dwGetRawReceiveTimestamp(dev, &rxTime);
-  dwCorrectTimestamp(dev, &rxTime);//api
-  if(rxPacket.payload[0] != PACKET_TYPE_TDOA3)
-    return;
-  handleRangePacket(rxTime.low32, &rxPacket);
-//   rxPacket.payload[0] = 0;
-  
-//   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+        const uint8_t id = anchorData->id;
+        if (id == ctx.anchorId)
+        {
+            *remoteRxSeqNr = anchorData->seq & 0x7f; //chenxin:这是作为发包方的远端基站收到的此基站上一次包的序列号，seq第一位是hasDistance，后七位为序列号
+            *remoteRx = anchorData->rxTimeStamp;     //chenxin:这是作为发包方的远端基站收到的此基站上一次包的时间
+            return true;
+        }
 
-//   if (dataLength == 0) {
-//     return;
-//   }
+        bool hasDistance = ((anchorData->seq & 0x80) != 0);
+        //chenxin?remote data section不止一段
+        if (hasDistance)
+        {
+            anchorDataPtr += sizeof(remoteAnchorDataFull_t);
+        }
+        else
+        {
+            anchorDataPtr += sizeof(remoteAnchorDataShort_t);
+        }
+    }
 
-//   switch(rxPacket.payload[0]) {
-//   case PACKET_TYPE_TDOA3:
-//     handleRangePacket(rxTime.low32, &rxPacket);
-//     break;
-//   case SHORT_LPP:
-//     if (rxPacket.destAddress[0] == ctx.anchorId) {
-//       lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
-//     }
-//     break;
-//   default:
-//     // Do nothing
-//     break;
-//   }
+    return false;
+}
+
+static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
+{ //chenxin:好像是计算基站0，1之间的tof，不过这样的话clockCorrection也就是基站0，1之间的了
+    // Check that the remote received seq nr is our latest tx seq nr
+    if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d)
+    {
+        uint32_t localTime = rx - ctx.txTime;
+        uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
+        uint32_t distance = (localTime - remoteTime) / 2;
+
+        return distance & 0xfffful;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
+{
+    const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
+    ctx.anchorRxCount[remoteAnchorId]++;
+    anchorContext_t *anchorCtx = getContext(remoteAnchorId);
+    if (anchorCtx)
+    {
+        const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
+
+        uint32_t remoteTx = rangePacket->header.txTimeStamp;
+        uint8_t remoteTxSeqNr = rangePacket->header.seq;
+
+        double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
+        if (updateClockCorrection(anchorCtx, clockCorrection))
+        {
+            anchorCtx->isDataGoodForTransmission = true;
+
+            uint32_t remoteRx = 0;
+            uint8_t remoteRxSeqNr = 0;
+            bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
+            if (dataFound)
+            {
+                uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+
+                // TODO krri Remove outliers in distances
+                if (distance > MIN_TOF)
+                {
+                    anchorCtx->distance = distance;
+                    //   anchorCtx->distanceUpdateTime = xTaskGetTickCount();
+                    anchorCtx->distanceUpdateTime = clock_time();
+                }
+            }
+        }
+        else
+        {
+            anchorCtx->isDataGoodForTransmission = false;
+        }
+        //chenxin:利用收到目的基站的最新包更新目的基站的上下文
+        anchorCtx->rxTimeStamp = rxTime;
+        anchorCtx->seqNr = remoteTxSeqNr;
+        anchorCtx->txTimeStamp = remoteTx;
+    }
+}
+
+static void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
+{
+    static packet_t rxPacket;
+    packet_t *prxPacket = &rxPacket;
+    int dataLength = data_len;
+    for (int i = 0; i < data_len; i++)
+    {
+        prxPacket[i] = packetbuf[i];
+    }
+    //   dwTime_t rxTime = { .full = 0 };
+
+    //   dwGetRawReceiveTimestamp(dev, &rxTime);
+    dwCorrectTimestamp(dev, &rxTime); //api
+    if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
+        return;
+    handleRangePacket(rxTime.low32, &rxPacket);
+    //   rxPacket.payload[0] = 0;
+
+    //   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+
+    //   if (dataLength == 0) {
+    //     return;
+    //   }
+
+    //   switch(rxPacket.payload[0]) {
+    //   case PACKET_TYPE_TDOA3:
+    //     handleRangePacket(rxTime.low32, &rxPacket);
+    //     break;
+    //   case SHORT_LPP:
+    //     if (rxPacket.destAddress[0] == ctx.anchorId) {
+    //       lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
+    //     }
+    //     break;
+    //   default:
+    //     // Do nothing
+    //     break;
+    //   }
 }
 
 // Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 and round up
@@ -487,7 +511,7 @@ static void adjustTxRxTime(dwTime_t *time)
 ////////////////////////////////// dwTime_t ？？
 static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
 {
-    dwTime_t transmitTime = { .full = 0 };
+    dwTime_t transmitTime = {.full = 0};
     //////////////////////////////////
     dwGetSystemTimestamp(&transmitTime);
 
@@ -522,7 +546,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
     uint8_t *anchorDataPtr = &rangePacket->remoteAnchorData;
     for (uint8_t i = 0; i < ctx.remoteTxIdCount; i++)
     {
-        remoteAnchorDataFull_t *anchorData = (remoteAnchorDataFull_t *) anchorDataPtr;
+        remoteAnchorDataFull_t *anchorData = (remoteAnchorDataFull_t *)anchorDataPtr;
 
         uint8_t id = ctx.remoteTxId[i];
         anchorContext_t *anchorCtx = getContext(id);
@@ -655,7 +679,6 @@ static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
     return ctx.nextTxTick - now;
 }
 
-
 // 数据初始化
 // 参数uwbConfig_t见uwb.h中定义
 static void tdoa3Init(uwbConfig_t *config)
@@ -698,7 +721,8 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev)
     return timeout_ms;
 }
 
-static void tdoa3UwbReceived(const uint8_t* packetbuf, const uint16_t data_len){
+static void tdoa3UwbReceived(const uint8_t *packetbuf, const uint16_t data_len)
+{
     tdoa3UwbEvent();
     handleRxPacket(packetbuf, data_len);
 }

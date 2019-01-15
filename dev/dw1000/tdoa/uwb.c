@@ -1,10 +1,10 @@
 
 // System configuration
 static struct uwbConfig_s config =
-{
-address:
-    {0, 0, 0, 0, 0, 0, 0xcf, 0xbc},
-};
+    {
+        address :
+            {0, 0, 0, 0, 0, 0, 0xcf, 0xbc},
+    };
 
 struct uwbConfig_s *uwbGetConfig()
 {
@@ -16,7 +16,7 @@ static dwDevice_t device = {
 
 };
 
-dwDevice_t* uwbGetDevice()
+dwDevice_t *uwbGetDevice()
 {
     return &device;
 }

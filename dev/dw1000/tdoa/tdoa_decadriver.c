@@ -5,24 +5,23 @@ void dwGetSystemTimestamp(dwTime_t *time)
     dwt_readfromdevice(SYS_TIME_ID, SYS_TIME_OFFSET, SYS_TIME_LEN, time->raw);
 }
 
-
 void dwSetData(dwDevice_t *dev, uint8_t data[], unsigned int n)
 {
-    if(dev->frameCheck)
+    if (dev->frameCheck)
     {
         n += 2; // two bytes CRC-16
     }
-    if(n > LEN_EXT_UWB_FRAMES)
+    if (n > LEN_EXT_UWB_FRAMES)
     {
         return; // TODO proper error handling: frame/buffer size
     }
-    if(n > LEN_UWB_FRAMES && !dev->extendedFrameLength)
+    if (n > LEN_UWB_FRAMES && !dev->extendedFrameLength)
     {
         return; // TODO proper error handling: frame/buffer size
     }
     // transmit data and length
     dwt_writetxdata(n, (uint8_t *)data, 0); /* Zero offset in TX buffer. */
-    dwt_writetxfctrl(n, 0, 1); /* Zero offset in TX buffer, no ranging. */
+    dwt_writetxfctrl(n, 0, 1);              /* Zero offset in TX buffer, no ranging. */
 }
 
 int8_t dwStartTransmit(dwTime_t *txTime)
@@ -34,10 +33,9 @@ int8_t dwStartTransmit(dwTime_t *txTime)
      * It also clears pending interrupts */
     dwt_forcetrxoff();
 
-    dwt_setdelayedtrxtime(txTime.low32) ;
+    dwt_setdelayedtrxtime(txTime.low32);
     /* Radio starts listening certain delay (in UWB microseconds) after TX */
     dwt_setrxaftertxdelay(0);
-
 
     /* Start transmission, indicating that a response is expected so that reception
      * is enabled automatically after the frame is sent and the delay set by
@@ -47,7 +45,6 @@ int8_t dwStartTransmit(dwTime_t *txTime)
 
     return ret;
 }
-
 
 void dwStartReceive(dwDevice_t *dev)
 {
@@ -64,9 +61,9 @@ void rx_rng_ok_cb(const dwt_cb_data_t *cb_data)
     //     goto abort;
     // }
     dwt_readrxtimestamp(rxTime.raw);
-// abort: /* In case we got anything unexpected */
-//   dwt_forcetrxoff();
-//   dwt_rxreset(); /* just to check */
-//   dwt_setrxtimeout(0);
-//   dwt_rxenable(0);
+    // abort: /* In case we got anything unexpected */
+    //   dwt_forcetrxoff();
+    //   dwt_rxreset(); /* just to check */
+    //   dwt_setrxtimeout(0);
+    //   dwt_rxenable(0);
 }

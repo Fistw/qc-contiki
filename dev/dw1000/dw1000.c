@@ -45,7 +45,7 @@
 #include "net/rime/rimestats.h"
 #include "net/netstack.h"
 #include "board.h" /* To be removed after debugging */
-#include "leds.h" /* To be removed after debugging */
+#include "leds.h"  /* To be removed after debugging */
 #include <stdbool.h>
 #include "dev/watchdog.h"
 /*---------------------------------------------------------------------------*/
@@ -57,7 +57,10 @@
 #include <stdio.h>
 #define PRINTF(...) printf(__VA_ARGS__)
 #else
-#define PRINTF(...) do {} while(0)
+#define PRINTF(...) \
+  do                \
+  {                 \
+  } while (0)
 #endif
 
 #define DEBUG_LEDS 1
@@ -68,7 +71,8 @@
 #define LEDS_TOGGLE(x)
 #endif
 /*---------------------------------------------------------------------------*/
-typedef enum {
+typedef enum
+{
   FRAME_RECEIVED = 1,
   RECV_TO,
   RECV_ERROR,
@@ -125,17 +129,17 @@ static radio_result_t dw1000_set_object(radio_param_t param, const void *src, si
 static void
 rx_ok_cb(const dwt_cb_data_t *cb_data)
 {
-  /*LEDS_TOGGLE(LEDS_GREEN); */
-  #if DW1000_RANGING_ENABLED
-    // if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
-    //   dw1000_rng_ok_cb(cb_data);
-    //   return;
-    // }
-    // /* got a non-ranging packet: reset the ranging module if */
-    // /* it was in the middle of ranging */
-    // dw1000_range_reset();
-    rx_rng_ok_cb(cb_data);
-  #endif
+/*LEDS_TOGGLE(LEDS_GREEN); */
+#if DW1000_RANGING_ENABLED
+  // if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
+  //   dw1000_rng_ok_cb(cb_data);
+  //   return;
+  // }
+  // /* got a non-ranging packet: reset the ranging module if */
+  // /* it was in the middle of ranging */
+  // dw1000_range_reset();
+  rx_rng_ok_cb(cb_data);
+#endif
 
   data_len = cb_data->datalength - DW1000_CRC_LEN;
   /* Set the appropriate event flag */
@@ -143,10 +147,13 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
 
   /* if we have auto-ACKs enabled and an ACK was requested, */
   /* don't signal the reception until the TX done interrupt */
-  if(auto_ack_enabled && (cb_data->status & SYS_STATUS_AAT)) {
+  if (auto_ack_enabled && (cb_data->status & SYS_STATUS_AAT))
+  {
     /*leds_on(LEDS_ORANGE); */
     wait_ack_txdone = true;
-  } else {
+  }
+  else
+  {
     wait_ack_txdone = false;
     process_poll(&dw1000_process);
   }
@@ -197,15 +204,15 @@ tx_conf_cb(const dwt_cb_data_t *cb_data)
   tx_done = 1; /* to stop waiting in dw1000_transmit() */
 
   /*if we are sending an auto ACK, signal the frame reception here */
-  if(wait_ack_txdone) {
+  if (wait_ack_txdone)
+  {
     wait_ack_txdone = false;
     process_poll(&dw1000_process);
   }
 }
 /*---------------------------------------------------------------------------*/
 
-int
-dw1000_configure(dwt_config_t *cfg)
+int dw1000_configure(dwt_config_t *cfg)
 {
 
   int8_t irq_status = dw1000_disable_interrupt();
@@ -263,8 +270,9 @@ dw1000_init(void)
   dwt_setcallbacks(&tx_conf_cb, &rx_ok_cb, &rx_to_cb, &rx_err_cb);
   /* Enable wanted interrupts (TX confirmation, RX good frames, RX timeouts and RX errors). */
   dwt_setinterrupt(DWT_INT_TFRS | DWT_INT_RFCG | DWT_INT_RFTO | DWT_INT_RXPTO |
-                   DWT_INT_RPHE | DWT_INT_RFCE | DWT_INT_RFSL | DWT_INT_SFDT |
-                   DWT_INT_ARFE, 1);
+                       DWT_INT_RPHE | DWT_INT_RFCE | DWT_INT_RFSL | DWT_INT_SFDT |
+                       DWT_INT_ARFE,
+                   1);
 
 #if DW1000_RANGING_ENABLED
   dw1000_ranging_init();
@@ -301,8 +309,9 @@ dw1000_prepare(const void *payload, unsigned short payload_len)
   uint8_t frame_len;
 
 #if DW1000_RANGING_ENABLED
-  if(dw1000_is_ranging()) {
-    return 1;   /* error */
+  if (dw1000_is_ranging())
+  {
+    return 1; /* error */
   }
 #endif
 
@@ -310,7 +319,7 @@ dw1000_prepare(const void *payload, unsigned short payload_len)
 
   /* Write frame data to DW1000 and prepare transmission */
   dwt_writetxdata(frame_len, (uint8_t *)payload, 0); /* Zero offset in TX buffer. */
-  dwt_writetxfctrl(frame_len, 0, 0); /* Zero offset in TX buffer, no ranging. */
+  dwt_writetxfctrl(frame_len, 0, 0);                 /* Zero offset in TX buffer, no ranging. */
   /* TODO: check the return status of the operations above */
   return 0;
 }
@@ -321,7 +330,8 @@ dw1000_transmit(unsigned short transmit_len)
   int ret;
   int8_t irq_status = dw1000_disable_interrupt();
 #if DW1000_RANGING_ENABLED
-  if(dw1000_is_ranging()) {
+  if (dw1000_is_ranging())
+  {
     dw1000_enable_interrupt(irq_status);
     return RADIO_TX_ERR;
   }
@@ -341,12 +351,14 @@ dw1000_transmit(unsigned short transmit_len)
   ret = dwt_starttx(DWT_START_TX_IMMEDIATE | DWT_RESPONSE_EXPECTED);
   dw1000_enable_interrupt(irq_status);
 
-  if(ret != DWT_SUCCESS) {
+  if (ret != DWT_SUCCESS)
+  {
     return RADIO_TX_ERR;
   }
 
   watchdog_periodic();
-  while(!tx_done) {
+  while (!tx_done)
+  {
     /* do nothing, could go to LPM mode */
     asm("");
     /* TODO: add a timeout */
@@ -357,9 +369,12 @@ dw1000_transmit(unsigned short transmit_len)
 static int
 dw1000_send(const void *payload, unsigned short payload_len)
 {
-  if(0 == dw1000_prepare(payload, payload_len)) {
+  if (0 == dw1000_prepare(payload, payload_len))
+  {
     return dw1000_transmit(payload_len);
-  } else {
+  }
+  else
+  {
     return RADIO_TX_ERR;
   }
 }
@@ -367,7 +382,8 @@ dw1000_send(const void *payload, unsigned short payload_len)
 static int
 dw1000_radio_read(void *buf, unsigned short buf_len)
 {
-  if(!frame_pending) {
+  if (!frame_pending)
+  {
     return 0;
   }
   dwt_readrxdata(buf, buf_len, 0);
@@ -379,12 +395,14 @@ static int
 dw1000_channel_clear(void)
 {
 #if DW1000_RANGING_ENABLED
-  if(dw1000_is_ranging()) {
+  if (dw1000_is_ranging())
+  {
     return 0;
   }
 #endif /* DW1000_RANGING_ENABLED */
 
-  if(wait_ack_txdone) {
+  if (wait_ack_txdone)
+  {
     return 0;
   }
 
@@ -395,7 +413,8 @@ static int
 dw1000_receiving_packet(void)
 {
   /* TODO: fix this by checking the actual radio status */
-  if(wait_ack_txdone) {
+  if (wait_ack_txdone)
+  {
     return 1;
   }
   return 0;
@@ -433,7 +452,8 @@ dw1000_get_value(radio_param_t param, radio_value_t *value)
 static radio_result_t
 dw1000_set_value(radio_param_t param, radio_value_t value)
 {
-  switch(param) {
+  switch (param)
+  {
   case RADIO_PARAM_PAN_ID:
     dwt_setpanid(value & 0xFFFF);
     return RADIO_RESULT_OK;
@@ -441,14 +461,17 @@ dw1000_set_value(radio_param_t param, radio_value_t value)
     dwt_setaddress16(value & 0xFFFF);
     return RADIO_RESULT_OK;
   case RADIO_PARAM_RX_MODE:
-    if(value & RADIO_RX_MODE_ADDRESS_FILTER) {
+    if (value & RADIO_RX_MODE_ADDRESS_FILTER)
+    {
       dwt_enableframefilter(DWT_FF_COORD_EN | DWT_FF_BEACON_EN | DWT_FF_DATA_EN | DWT_FF_ACK_EN | DWT_FF_MAC_EN);
 #if DW1000_AUTOACK
       /* Auto-ack is only possible if frame filtering is activated */
       dwt_enableautoack(DW1000_AUTOACK_DELAY);
       auto_ack_enabled = true;
 #endif
-    } else {
+    }
+    else
+    {
       dwt_enableframefilter(DWT_FF_NOTYPE_EN);
       auto_ack_enabled = false;
     }
@@ -460,8 +483,10 @@ dw1000_set_value(radio_param_t param, radio_value_t value)
 static radio_result_t
 dw1000_get_object(radio_param_t param, void *dest, size_t size)
 {
-  if(param == RADIO_PARAM_64BIT_ADDR) {
-    if(size != 8 || dest == NULL) {
+  if (param == RADIO_PARAM_64BIT_ADDR)
+  {
+    if (size != 8 || dest == NULL)
+    {
       return RADIO_RESULT_INVALID_VALUE;
     }
     dwt_geteui((uint8_t *)dest);
@@ -473,8 +498,10 @@ dw1000_get_object(radio_param_t param, void *dest, size_t size)
 static radio_result_t
 dw1000_set_object(radio_param_t param, const void *src, size_t size)
 {
-  if(param == RADIO_PARAM_64BIT_ADDR) {
-    if(size != 8 || src == NULL) {
+  if (param == RADIO_PARAM_64BIT_ADDR)
+  {
+    if (size != 8 || src == NULL)
+    {
       return RADIO_RESULT_INVALID_VALUE;
     }
     dwt_seteui((uint8_t *)src);
@@ -489,19 +516,22 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
   /*PRINTF("dw1000_process: started\n"); */
 
-  while(1) {
+  while (1)
+  {
     PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
 
     PRINTF("dwr frame\n");
 
-    if(!frame_pending) {
+    if (!frame_pending)
+    {
       /* received a frame but it was already read (e.g. ACK) */
       /* re-enable rx */
       dw1000_on();
       continue;
     }
 
-    if(data_len > PACKETBUF_SIZE) {
+    if (data_len > PACKETBUF_SIZE)
+    {
       frame_pending = false;
       dw1000_on();
       continue; /* packet is too big, drop it */
@@ -525,26 +555,24 @@ PROCESS_THREAD(dw1000_process, ev, data)
 }
 /*---------------------------------------------------------------------------*/
 const struct radio_driver dw1000_driver =
-{
-  dw1000_init,
-  dw1000_prepare,
-  dw1000_transmit,
-  dw1000_send,
-  dw1000_radio_read,
-  dw1000_channel_clear,
-  dw1000_receiving_packet,
-  dw1000_pending_packet,
-  dw1000_on,
-  dw1000_off,
-  dw1000_get_value,
-  dw1000_set_value,
-  dw1000_get_object,
-  dw1000_set_object
-};
+    {
+        dw1000_init,
+        dw1000_prepare,
+        dw1000_transmit,
+        dw1000_send,
+        dw1000_radio_read,
+        dw1000_channel_clear,
+        dw1000_receiving_packet,
+        dw1000_pending_packet,
+        dw1000_on,
+        dw1000_off,
+        dw1000_get_value,
+        dw1000_set_value,
+        dw1000_get_object,
+        dw1000_set_object};
 /*---------------------------------------------------------------------------*/
 
-bool
-range_with(linkaddr_t *dst, dw1000_rng_type_t type)
+bool range_with(linkaddr_t *dst, dw1000_rng_type_t type)
 {
 #if DW1000_RANGING_ENABLED
   return dw1000_range_with(dst, type);
@@ -559,16 +587,19 @@ PROCESS_THREAD(dw1000_dbg_process, ev, data)
   static uint32_t r1;
   static uint8_t r2;
   PROCESS_BEGIN();
-  while(1) {
+  while (1)
+  {
     etimer_set(&et, CLOCK_SECOND);
     PROCESS_WAIT_EVENT();
-    if(ev == PROCESS_EVENT_POLL) {
+    if (ev == PROCESS_EVENT_POLL)
+    {
       r1 = radio_status;
       printf("RX ERR(%u) %02x %02x %02x %02x\n",
              dw_dbg_event, (uint8_t)(r1 >> 24), (uint8_t)(r1 >> 16),
              (uint8_t)(r1 >> 8), (uint8_t)r1);
     }
-    if(etimer_expired(&et)) {
+    if (etimer_expired(&et))
+    {
       r1 = dwt_read32bitoffsetreg(SYS_STATUS_ID, 0);
       r2 = dwt_read8bitoffsetreg(SYS_STATUS_ID, 4);
       printf("*** SYS_STATUS %02x %02x %02x %02x %02x ***\n",

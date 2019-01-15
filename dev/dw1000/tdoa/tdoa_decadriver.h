@@ -27,7 +27,6 @@
 
 // #include "libdw1000Spi.h"
 
-
 // // Default Mode of operation
 // extern const uint8_t MODE_LONGDATA_RANGE_LOWPOWER[];
 // extern const uint8_t MODE_SHORTDATA_FAST_LOWPOWER[];
@@ -38,8 +37,7 @@
 // extern const uint8_t MODE_SHORTDATA_MID_ACCURACY[];
 // extern const uint8_t MODE_LONGDATA_MID_ACCURACY[];
 
-typedef union dwTime_u
-{
+typedef union dwTime_u {
     uint8_t raw[5];
     uint64_t full;
     struct
@@ -53,7 +51,6 @@ typedef union dwTime_u
         uint32_t high32;
     } __attribute__((packed));
 } dwTime_t;
-
 
 /**
  * DW device type. Contains the context of a dw1000 device and should be passed
@@ -183,8 +180,6 @@ typedef struct dwDevice_s
 // void dwInterruptOnAutomaticAcknowledgeTrigger(dwDevice_t* dev, bool val);
 // void dwClearInterrupts(dwDevice_t* dev);
 
-
-
 // void dwIdle(dwDevice_t* dev);
 // void dwNewReceive(dwDevice_t* dev);
 void dwStartReceive(dwDevice_t *dev);
@@ -259,7 +254,6 @@ void dwGetSystemTimestamp(dwDevice_t *dev, dwTime_t *time);
 // /* Error codes */
 // #define DW_ERROR_OK 0
 // #define DW_ERROR_WRONG_ID 1
-
 
 // #endif //__LIBDW1000_H__
 static dwTime_t rxTime = {.full = 0};

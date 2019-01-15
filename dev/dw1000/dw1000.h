@@ -157,11 +157,11 @@
 
 #ifdef DW1000_CONF_AUTOACK_DELAY
 #define DW1000_AUTOACK_DELAY DW1000_CONF_AUTOACK_DELAY
-#else /* DW1000_CONF_AUTOACK_DELAY */
+#else                            /* DW1000_CONF_AUTOACK_DELAY */
 /* #define DW1000_AUTOACK_DELAY 3 // Min supported by the radio */
 /* #define DW1000_AUTOACK_DELAY 12 // Min mandated by IEEE 802.15.4 for HRP UWB PHY */
 #define DW1000_AUTOACK_DELAY 255 /* Max supported by the radio */
-#endif /* DW1000_CONF_AUTOACK_DELAY */
+#endif                           /* DW1000_CONF_AUTOACK_DELAY */
 
 #ifdef DW1000_CONF_RANGING_ENABLED
 #define DW1000_RANGING_ENABLED DW1000_CONF_RANGING_ENABLED
@@ -173,7 +173,11 @@
 extern const struct radio_driver dw1000_driver;
 /*---------------------------------------------------------------------------*/
 
-typedef enum {DW1000_RNG_SS, DW1000_RNG_DS} dw1000_rng_type_t;
+typedef enum
+{
+    DW1000_RNG_SS,
+    DW1000_RNG_DS
+} dw1000_rng_type_t;
 
 bool range_with(linkaddr_t *dst, dw1000_rng_type_t type);
 

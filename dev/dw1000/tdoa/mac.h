@@ -3,25 +3,23 @@
 
 #include <stdint.h>
 
-
 // Packet format with compressed PAN and 64Bit addresses
 // Maximum 128s bytes payload
 typedef struct packet_s
 {
-    union
-    {
+    union {
         uint16_t fcf;
         struct
         {
-            uint16_t type: 3;
-            uint16_t security: 1;
-            uint16_t framePending: 1;
-            uint16_t ack: 1;
-            uint16_t ipan: 1;
-            uint16_t reserved: 3;
-            uint16_t destAddrMode: 2;
-            uint16_t version: 2;
-            uint16_t srcAddrMode: 2;
+            uint16_t type : 3;
+            uint16_t security : 1;
+            uint16_t framePending : 1;
+            uint16_t ack : 1;
+            uint16_t ipan : 1;
+            uint16_t reserved : 3;
+            uint16_t destAddrMode : 2;
+            uint16_t version : 2;
+            uint16_t srcAddrMode : 2;
         } fcf_s;
     };
 
@@ -33,15 +31,15 @@ typedef struct packet_s
     uint8_t payload[128];
 } __attribute__((packed)) packet_t;
 
-#define MAC80215_PACKET_INIT(packet, TYPE) packet.fcf_s.type = (TYPE); \
-  packet.fcf_s.security = 0; \
-  packet.fcf_s.framePending = 0; \
-  packet.fcf_s.ack = 0; \
-  packet.fcf_s.ipan = 1; \
-  packet.fcf_s.destAddrMode = 3; \
-  packet.fcf_s.version = 1; \
-  packet.fcf_s.srcAddrMode = 3;
-
+#define MAC80215_PACKET_INIT(packet, TYPE) \
+    packet.fcf_s.type = (TYPE);            \
+    packet.fcf_s.security = 0;             \
+    packet.fcf_s.framePending = 0;         \
+    packet.fcf_s.ack = 0;                  \
+    packet.fcf_s.ipan = 1;                 \
+    packet.fcf_s.destAddrMode = 3;         \
+    packet.fcf_s.version = 1;              \
+    packet.fcf_s.srcAddrMode = 3;
 
 #define MAC802154_TYPE_BEACON 0
 #define MAC802154_TYPE_DATA 1

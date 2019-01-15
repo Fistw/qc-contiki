@@ -15,4 +15,3 @@ typedef struct uwbConfig_s
     bool lowBitrate;
     bool longPreamble;
 } uwbConfig_t;
-
