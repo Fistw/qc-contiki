@@ -17,13 +17,11 @@
 //  * See the License for the specific language governing permissions and
 //  * limitations under the License.
 //  */
-
-// #ifndef __LIBDW1000_H__
-// #define __LIBDW1000_H__
-
+#ifndef __TDOA_DECADRIVER__
+#define __TDOA_DECADRIVER__
 // #include <stddef.h>
-// #include <stdint.h>
-// #include <stdbool.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 // #include "libdw1000Spi.h"
 
@@ -36,6 +34,8 @@
 // extern const uint8_t MODE_LONGDATA_RANGE_ACCURACY[];
 // extern const uint8_t MODE_SHORTDATA_MID_ACCURACY[];
 // extern const uint8_t MODE_LONGDATA_MID_ACCURACY[];
+#define LEN_EXT_UWB_FRAMES 1023
+#define LEN_UWB_FRAMES 127
 
 typedef union dwTime_u {
     uint8_t raw[5];
@@ -51,38 +51,13 @@ typedef union dwTime_u {
         uint32_t high32;
     } __attribute__((packed));
 } dwTime_t;
-
+static dwTime_t rxTime = {.full = 0};
 /**
  * DW device type. Contains the context of a dw1000 device and should be passed
  * as first argument of most of the driver functions.
  */
 typedef struct dwDevice_s
 {
-    struct dwOps_s *ops;
-    void *userdata;
-
-    /* State */
-    uint8_t sysctrl[LEN_SYS_CTRL];
-    uint8_t deviceMode;
-    uint8_t networkAndAddress[LEN_PANADR];
-    uint8_t syscfg[LEN_SYS_CFG];
-    uint8_t sysmask[LEN_SYS_MASK];
-    uint8_t chanctrl[LEN_CHAN_CTRL];
-    uint8_t sysstatus[LEN_SYS_STATUS];
-    uint8_t txfctrl[LEN_TX_FCTRL];
-
-    uint8_t extendedFrameLength;
-    uint8_t pacSize;
-    uint8_t pulseFrequency;
-    uint8_t dataRate;
-    uint8_t preambleLength;
-    uint8_t preambleCode;
-    uint8_t channel;
-    bool smartPower;
-    bool frameCheck;
-    bool permanentReceive;
-    bool wait4resp;
-
     dwTime_t antennaDelay;
 
     // settings
@@ -184,7 +159,7 @@ typedef struct dwDevice_s
 // void dwNewReceive(dwDevice_t* dev);
 void dwStartReceive(dwDevice_t *dev);
 // void dwNewTransmit(dwDevice_t* dev);
-void dwStartTransmit(dwDevice_t *dev);
+uint8_t dwStartTransmit(dwTime_t *txTime);
 // void dwNewConfiguration(dwDevice_t* dev);
 // void dwCommitConfiguration(dwDevice_t* dev);
 // void dwWaitForResponse(dwDevice_t* dev, bool val);
@@ -208,7 +183,7 @@ void dwSetData(dwDevice_t *dev, uint8_t data[], unsigned int n);
 // void dwGetReceiveTimestamp(dwDevice_t* dev, dwTime_t* time);
 // void dwGetRawReceiveTimestamp(dwDevice_t* dev, dwTime_t* time);
 // void dwCorrectTimestamp(dwDevice_t* dev, dwTime_t* timestamp);
-void dwGetSystemTimestamp(dwDevice_t *dev, dwTime_t *time);
+void dwGetSystemTimestamp(dwTime_t *time);
 // bool dwIsTransmitDone(dwDevice_t* dev);
 // bool dwIsReceiveTimestampAvailable(dwDevice_t* dev);
 // bool dwIsReceiveDone(dwDevice_t* dev);
@@ -256,5 +231,6 @@ void dwGetSystemTimestamp(dwDevice_t *dev, dwTime_t *time);
 // #define DW_ERROR_WRONG_ID 1
 
 // #endif //__LIBDW1000_H__
-static dwTime_t rxTime = {.full = 0};
-void rx_rng_ok_cb(const dwt_cb_data_t *cb_data);
+// void rx_rng_ok_cb(const dwt_cb_data_t *cb_data);
+
+#endif

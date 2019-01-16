@@ -13,14 +13,43 @@
 #include <stdlib.h>
 
 #include "uwb.h"
-#include "libdw1000.h"
+#include "mac.h"
+#include "uwb_tdoa_anchor3.h"
 
 // 根据设定的协议，定义数据包结构体及相关变量
+// Time length of the preamble
+// preamble是啥？
+#define PREAMBLE_LENGTH_S ( 128 * 1017.63e-9 ) //0.000130257
+#define PREAMBLE_LENGTH (uint64_t)( PREAMBLE_LENGTH_S * 499.2e6 * 128 ) //832310.96832
+
+// Guard length to account for clock drift and time of flight
+// 考虑了时钟漂移和飞行时间的保护长度？
+#define TDMA_GUARD_LENGTH_S ( 1e-6 ) //0.000001
+#define TDMA_GUARD_LENGTH (uint64_t)( TDMA_GUARD_LENGTH_S * 499.2e6 * 128 )
+
+#define TDMA_EXTRA_LENGTH_S ( 300e-6 )
+#define TDMA_EXTRA_LENGTH (uint64_t)( TDMA_EXTRA_LENGTH_S * 499.2e6 * 128 )
+
+#define TDMA_HIGH_RES_RAND_S ( 1e-3 )
+#define TDMA_HIGH_RES_RAND (uint64_t)( TDMA_HIGH_RES_RAND_S * 499.2e6 * 128 )
 
 #define ANCHOR_LIST_UPDATE_INTERVAL 1000; //Anchor列表更新间隔
 
+#define CLOCK_CORRECTION_BUCKET_MAX 4
+#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
+
+#define MAX_CLOCK_DEVIATION_SPEC 10e-6
+#define CLOCK_CORRECTION_FILTER 0.1d
+
+#define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC * 2)
+#define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC * 2)
+
 #define ANCHOR_STORAGE_COUNT 16
 #define REMOTE_TX_MAX_COUNT 8 // REMOTE_TX_MAX_COUNT < ANCHOR_STORAGE_COUNT
+
+#define ANTENNA_OFFSET 154.6   // In meters
+#define ANTENNA_DELAY  ((ANTENNA_OFFSET*499.2e6*128)/299792458.0) // In radio tick
+#define MIN_TOF ANTENNA_DELAY
 
 #define ID_COUNT 256 //用8位整型来存储id，最多也就256个
 #define ID_WITHOUT_CONTEXT 0xff
@@ -33,7 +62,7 @@
 #define ANCHOR_MIN_TX_FREQ 20.0
 
 ////////////////////////////////// FreeRTOSConfig.h中定义M2T()，应该是跟时间有关的单位转换
-#define DISTANCE_VALIDITY_PERIOD M2T(2 * 1000);
+#define DISTANCE_VALIDITY_PERIOD (2 * 1000);
 
 // Useful constants
 static const uint8_t base_address[] = {0, 0, 0, 0, 0, 0, 0xcf, 0xbc};
@@ -204,7 +233,7 @@ static void createAnchorContextsInList(const uint8_t *id, const uint8_t count)
 static void purgeData()
 {
     ////////////////////////////////// xTaskGetTickCount需更换成contiki平台系统时间获取接口
-    uint32_t now = xTaskGetTickCount();
+    uint32_t now = clock_time();
     uint32_t acceptedCreationTime = now - DISTANCE_VALIDITY_PERIOD;
 
     for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++)
@@ -463,19 +492,19 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     }
 }
 
-static void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
+void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
 {
     static packet_t rxPacket;
     packet_t *prxPacket = &rxPacket;
     int dataLength = data_len;
     for (int i = 0; i < data_len; i++)
     {
-        prxPacket[i] = packetbuf[i];
+        prxPacket->payload[i] = packetbuf[i];
     }
     //   dwTime_t rxTime = { .full = 0 };
 
     //   dwGetRawReceiveTimestamp(dev, &rxTime);
-    dwCorrectTimestamp(dev, &rxTime); //api
+    // dwCorrectTimestamp(dev, &rxTime); //api
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
         return;
     handleRangePacket(rxTime.low32, &rxPacket);
@@ -609,7 +638,7 @@ static void setTxData(dwDevice_t *dev)
     //     txPacket.payload[rangePacketSize + LPP_TYPE] = LPP_SHORT_ANCHOR_POSITION;
 
     //     struct lppShortAnchorPosition_s *pos = (struct lppShortAnchorPosition_s *) &txPacket.payload[rangePacketSize + LPP_PAYLOAD];
-    memcpy(pos->position, uwbConfig->position, 3 * sizeof(float));
+    // memcpy(pos->position, uwbConfig->position, 3 * sizeof(float));
 
     //     lppLength = 2 + sizeof(struct lppShortAnchorPosition_s);
     // }
@@ -629,19 +658,11 @@ static void setupTx(dwDevice_t *dev)
 
     //////////////////////////////////
     // dwNewTransmit(dev);
-    dev->deviceMode = TX_MODE;
+    // dev->deviceMode = TX_MODE;
     // dwSetDefaults(dev);
     // dwSetTxRxTime(dev, txTime);
 
-    dwStartTransmit(txTime);
-}
-
-static void setupRx(dwDevice_t *dev)
-{
-    //////////////////////////////////
-    // dwNewReceive(dev);
-    // dwSetDefaults(dev);
-    dwStartReceive(dev);
+    dwStartTransmit(&txTime);
 }
 
 static uint32_t randomizeDelayToNextTx()
@@ -655,33 +676,9 @@ static uint32_t randomizeDelayToNextTx()
     return delay;
 }
 
-////////////////////////////////// 参数dwDevice_t定义在libdw1000.h中
-static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
-{
-    ////////////////////////////////// 设备置闲状态？
-    dwIdle(dev);
-
-    if (ctx.nextTxTick < now)
-    {
-        uint32_t newDelay = randomizeDelayToNextTx();
-        ////////////////////////////////// M2T()方法
-        ctx.nextTxTick = now + M2T(newDelay);
-
-        // 准备发送
-        setupTx(dev);
-    }
-    else
-    {
-        // 准备接收
-        setupRx(dev);
-    }
-
-    return ctx.nextTxTick - now;
-}
-
 // 数据初始化
 // 参数uwbConfig_t见uwb.h中定义
-static void tdoa3Init(uwbConfig_t *config)
+void tdoa3Init(uwbConfig_t *config)
 {
     ctx.anchorId = config->address[0];
     ctx.seqNr = 0;
@@ -707,7 +704,7 @@ static void tdoa3Init(uwbConfig_t *config)
 }
 
 // 有一些uwb事件中断发生，比如收到包，发送包，超时等；
-static uint32_t tdoa3UwbEvent(dwDevice_t *dev)
+uint32_t tdoa3UwbEvent(dwDevice_t *dev)
 {
     uint32_t now = clock_time();
     if (now > ctx.nextAnchorListUpdate)
@@ -716,13 +713,16 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev)
         ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL; // 更新update时间
     }
 
-    // 开始下次事件
-    uint32_t timeout_ms = startNextEvent(dev, now);
-    return timeout_ms;
-}
+    if (ctx.nextTxTick < now)
+    {
+        uint32_t newDelay = randomizeDelayToNextTx();
+        ////////////////////////////////// M2T()方法
+        ctx.nextTxTick = now + newDelay;
 
-static void tdoa3UwbReceived(const uint8_t *packetbuf, const uint16_t data_len)
-{
-    tdoa3UwbEvent();
-    handleRxPacket(packetbuf, data_len);
+        // 准备发送
+        setupTx(dev);
+    }
+
+    uint32_t timeout_ms =  ctx.nextTxTick - now;
+    return timeout_ms;
 }

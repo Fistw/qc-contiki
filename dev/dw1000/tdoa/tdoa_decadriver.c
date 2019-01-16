@@ -1,3 +1,5 @@
+#include "tdoa_decadriver.h"
+#include "decadriver/deca_regs.h"
 
 void dwGetSystemTimestamp(dwTime_t *time)
 {
@@ -7,7 +9,7 @@ void dwGetSystemTimestamp(dwTime_t *time)
 
 void dwSetData(dwDevice_t *dev, uint8_t data[], unsigned int n)
 {
-    if (dev->frameCheck)
+    // if (dev->frameCheck)
     {
         n += 2; // two bytes CRC-16
     }
@@ -15,16 +17,16 @@ void dwSetData(dwDevice_t *dev, uint8_t data[], unsigned int n)
     {
         return; // TODO proper error handling: frame/buffer size
     }
-    if (n > LEN_UWB_FRAMES && !dev->extendedFrameLength)
-    {
-        return; // TODO proper error handling: frame/buffer size
-    }
+    // if (n > LEN_UWB_FRAMES && !dev->extendedFrameLength)
+    // {
+    //     return; // TODO proper error handling: frame/buffer size
+    // }
     // transmit data and length
     dwt_writetxdata(n, (uint8_t *)data, 0); /* Zero offset in TX buffer. */
     dwt_writetxfctrl(n, 0, 1);              /* Zero offset in TX buffer, no ranging. */
 }
 
-int8_t dwStartTransmit(dwTime_t *txTime)
+uint8_t dwStartTransmit(dwTime_t *txTime)
 {
 
     int ret;
@@ -33,7 +35,7 @@ int8_t dwStartTransmit(dwTime_t *txTime)
      * It also clears pending interrupts */
     dwt_forcetrxoff();
 
-    dwt_setdelayedtrxtime(txTime.low32);
+    dwt_setdelayedtrxtime(txTime->low32);
     /* Radio starts listening certain delay (in UWB microseconds) after TX */
     dwt_setrxaftertxdelay(0);
 
@@ -46,24 +48,16 @@ int8_t dwStartTransmit(dwTime_t *txTime)
     return ret;
 }
 
-void dwStartReceive(dwDevice_t *dev)
-{
-    setBit(dev->sysctrl, LEN_SYS_CTRL, SFCST_BIT, !dev->frameCheck);
-    setBit(dev->sysctrl, LEN_SYS_CTRL, RXENAB_BIT, true);
-    dwSpiWrite(dev, SYS_CTRL, NO_SUB, dev->sysctrl, LEN_SYS_CTRL);
-    dwt_readrxdata(buf, buf_len, 0);
-}
-
-void rx_rng_ok_cb(const dwt_cb_data_t *cb_data)
-{
-    uint16_t pkt_len = cb_data->datalength;
-    // if(pkt_len != 12) {
-    //     goto abort;
-    // }
-    dwt_readrxtimestamp(rxTime.raw);
-    // abort: /* In case we got anything unexpected */
-    //   dwt_forcetrxoff();
-    //   dwt_rxreset(); /* just to check */
-    //   dwt_setrxtimeout(0);
-    //   dwt_rxenable(0);
-}
+// void rx_rng_ok_cb(const dwt_cb_data_t *cb_data)
+// {
+//     // uint16_t pkt_len = cb_data->datalength;
+//     // if(pkt_len != 12) {
+//     //     goto abort;
+//     // }
+//     dwt_readrxtimestamp(rxTime.raw);
+//     // abort: /* In case we got anything unexpected */
+//     //   dwt_forcetrxoff();
+//     //   dwt_rxreset(); /* just to check */
+//     //   dwt_setrxtimeout(0);
+//     //   dwt_rxenable(0);
+// }

@@ -44,7 +44,7 @@
 #define PACKET_STATS 0
 
 struct packet {
-        uint8_t length; /* does not include FCS checksum */
+    uint8_t length; /* does not include FCS checksum */
 	volatile struct packet * left;
 	volatile struct packet * right;
         /* offset into data for first byte of the packet payload */

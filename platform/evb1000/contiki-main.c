@@ -196,16 +196,16 @@ main(void)
   set_rf_params();
 
   /* Init pseudo-random generator with a chip-id based seed */ 
-  random_init(0xFFFF & dwt_getpartid());
+  //random_init(0xFFFF & dwt_getpartid());
 
   //process_start(&sensors_process, NULL);
 
   serial_line_init();
   fade_leds();
 
-  char str[20];
-  snprintf(str, 20, "Contiki 0x%02x%02x", linkaddr_node_addr.u8[0], linkaddr_node_addr.u8[1]);
-  lcd_display_str(str);
+  //char str[20];
+  //snprintf(str, 20, "Contiki 0x%02x%02x", linkaddr_node_addr.u8[0], linkaddr_node_addr.u8[1]);
+  //lcd_display_str(str);
 
   /* Start application processes */
   autostart_start(autostart_processes);
