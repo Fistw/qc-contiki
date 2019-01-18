@@ -133,6 +133,7 @@ static radio_result_t dw1000_set_object(radio_param_t param, const void *src, si
 static void
 rx_ok_cb(const dwt_cb_data_t *cb_data)
 {
+	printf("rx_ok_cb is called.\n");
     /*LEDS_TOGGLE(LEDS_GREEN); */
 #if DW1000_RANGING_ENABLED
     // if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
@@ -168,6 +169,7 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
 static void
 rx_to_cb(const dwt_cb_data_t *cb_data)
 {
+	printf("rx_to_cb is called.\n");
 #if DW1000_RANGING_ENABLED
     dw1000_range_reset();
 #endif
@@ -186,6 +188,8 @@ rx_to_cb(const dwt_cb_data_t *cb_data)
 static void
 rx_err_cb(const dwt_cb_data_t *cb_data)
 {
+	printf("rx_err_cb is called.\n");
+	printf("%d", cb_data->status);
 #if DW1000_RANGING_ENABLED
     dw1000_range_reset();
 #endif
@@ -203,6 +207,8 @@ rx_err_cb(const dwt_cb_data_t *cb_data)
 static void
 tx_conf_cb(const dwt_cb_data_t *cb_data)
 {
+	printf("tx_conf_cb is called.\n");
+	printf("%d\n", cb_data->status);
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
 
@@ -263,10 +269,11 @@ dw1000_init(void)
 #endif
 
     auto_ack_enabled = false;
+    dwt_enableframefilter(DWT_FF_NOTYPE_EN);
 
-#if DW1000_FRAMEFILTER == 1
-    dw1000_set_value(RADIO_PARAM_RX_MODE, RADIO_RX_MODE_ADDRESS_FILTER);
-#endif /* DW1000_FRAMEFILTER */
+//#if DW1000_FRAMEFILTER == 1
+//    dw1000_set_value(RADIO_PARAM_RX_MODE, RADIO_RX_MODE_ADDRESS_FILTER);
+//#endif /* DW1000_FRAMEFILTER */
 
     /* Set the DW1000 ISR */
     dw1000_set_isr(dwt_isr);
@@ -547,7 +554,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
         /* Copy the received frame to packetbuf */
         dw1000_radio_read(packetbuf_dataptr(), data_len);
-        //handleRxPacket(packetbuf_dataptr(), data_len); //data_len不包括2字节的crc
+        handleRxPacket(packetbuf_dataptr(), data_len); //data_len不包括2字节的crc
         packetbuf_set_datalen(data_len);
 
         /* Re-enable RX to keep listening */

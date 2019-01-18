@@ -15,6 +15,8 @@
 #include "uwb.h"
 #include "mac.h"
 #include "uwb_tdoa_anchor3.h"
+#include "decadriver/deca_regs.h"
+#include "decadriver/deca_device_api.h"
 
 // 根据设定的协议，定义数据包结构体及相关变量
 // Time length of the preamble
@@ -451,6 +453,13 @@ static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr,
 static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
 {
     const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
+    printf("ID: %d\n", remoteAnchorId);
+
+    const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
+    uint32_t remoteTx = rangePacket->header.txTimeStamp;
+    uint8_t remoteTxSeqNr = rangePacket->header.seq;
+    printf("remote: %d %d\n", remoteTx, remoteTxSeqNr);
+
     ctx.anchorRxCount[remoteAnchorId]++;
     anchorContext_t *anchorCtx = getContext(remoteAnchorId);
     if (anchorCtx)
@@ -459,6 +468,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
 
         uint32_t remoteTx = rangePacket->header.txTimeStamp;
         uint8_t remoteTxSeqNr = rangePacket->header.seq;
+        printf("remote: %d %d\n", remoteTx, remoteTxSeqNr);
 
         double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
         if (updateClockCorrection(anchorCtx, clockCorrection))
@@ -495,18 +505,23 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
 void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
 {
     static packet_t rxPacket;
-    packet_t *prxPacket = &rxPacket;
+    uint8_t *prxPacket = &rxPacket;
     int dataLength = data_len;
     for (int i = 0; i < data_len; i++)
     {
-        prxPacket->payload[i] = packetbuf[i];
+    	printf("%d ", packetbuf[i]);
+        prxPacket[i] = packetbuf[i];
     }
+    printf("\n");
     //   dwTime_t rxTime = { .full = 0 };
 
     //   dwGetRawReceiveTimestamp(dev, &rxTime);
     // dwCorrectTimestamp(dev, &rxTime); //api
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
-        return;
+    {
+    	printf("Not a TDOA3 Packet.\n");
+    	return;
+    }
     handleRangePacket(rxTime.low32, &rxPacket);
     //   rxPacket.payload[0] = 0;
 
@@ -543,13 +558,14 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
     dwTime_t transmitTime = {.full = 0};
     //////////////////////////////////
     dwGetSystemTimestamp(&transmitTime);
-
+    printf("before: %u %u\n", transmitTime.high8, transmitTime.low32);
+    printf("before: %u %u\n", transmitTime.high32, transmitTime.low8);
     // Add guard and preamble time
-    transmitTime.full += TDMA_GUARD_LENGTH;
-    transmitTime.full += PREAMBLE_LENGTH;
+    transmitTime.full += TDMA_GUARD_LENGTH*10;
+    transmitTime.full += PREAMBLE_LENGTH*10;
 
     // And some extra
-    transmitTime.full += TDMA_EXTRA_LENGTH;
+    transmitTime.full += TDMA_EXTRA_LENGTH*10;
 
     // TODO krri Adding randomization on this level adds a long delay, is it worth it?
     // The randomization on OS level is quantized to 1 ms (tick time of the system)
@@ -561,6 +577,8 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
     // DW1000 can only schedule time with 9 LSB at 0, adjust for it
     adjustTxRxTime(&transmitTime);
 
+    printf("after: %u %u\n", transmitTime.high8, transmitTime.low32);
+    printf("after: %u %u\n", transmitTime.high32, transmitTime.low8);
     return transmitTime;
 }
 
@@ -631,6 +649,13 @@ static void setTxData(dwDevice_t *dev)
 
     int rangePacketSize = populateTxData((rangePacket3_t *)txPacket.payload);
 
+    printf("send:\n");
+    for (int i = 0; i < rangePacketSize; i++)
+    {
+    	printf("%d ", txPacket.payload[i]);
+    }
+    printf("\n");
+
     // LPP anchor position is currently sent in all packets
     // if (uwbConfig->positionEnabled)
     // {
@@ -662,7 +687,14 @@ static void setupTx(dwDevice_t *dev)
     // dwSetDefaults(dev);
     // dwSetTxRxTime(dev, txTime);
 
-    dwStartTransmit(&txTime);
+    int ret = dwStartTransmit(&txTime);
+    printf("ret = %d\n", ret);
+//    if (ret == 0)
+//    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
+//    {
+////    	printf("%d\n", dwt_read32bitreg(SYS_STATUS_ID));
+////    	clock_wait(1);
+//    }
 }
 
 static uint32_t randomizeDelayToNextTx()
@@ -673,7 +705,8 @@ static uint32_t randomizeDelayToNextTx()
     // 产生随机发送延迟时长的方法
     uint32_t delay = ctx.averageTxDelay + r % interval - interval / 2;
 
-    return delay;
+//    return delay;
+    return 3000;
 }
 
 // 数据初始化
@@ -704,8 +737,9 @@ void tdoa3Init(uwbConfig_t *config)
 }
 
 // 有一些uwb事件中断发生，比如收到包，发送包，超时等；
-uint32_t tdoa3UwbEvent(dwDevice_t *dev)
+void tdoa3UwbEvent(dwDevice_t *dev)
 {
+	printf("tdoa3uwbevent is called.\n");
     uint32_t now = clock_time();
     if (now > ctx.nextAnchorListUpdate)
     {
@@ -713,16 +747,19 @@ uint32_t tdoa3UwbEvent(dwDevice_t *dev)
         ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL; // 更新update时间
     }
 
-    if (ctx.nextTxTick < now)
-    {
-        uint32_t newDelay = randomizeDelayToNextTx();
-        ////////////////////////////////// M2T()方法
-        ctx.nextTxTick = now + newDelay;
+//    if (ctx.nextTxTick < now)
+//    {
+//        uint32_t newDelay = randomizeDelayToNextTx();
+//        ////////////////////////////////// M2T()方法
+//        ctx.nextTxTick = now + newDelay;
+//
+//        // 准备发送
+//        printf("setupTx is called.\n");
+//        setupTx(dev);
+//    }
 
-        // 准备发送
-        setupTx(dev);
-    }
-
-    uint32_t timeout_ms =  ctx.nextTxTick - now;
-    return timeout_ms;
+    setupTx(dev);
+//
+//    uint32_t timeout_ms =  ctx.nextTxTick - now;
+//    return timeout_ms;
 }

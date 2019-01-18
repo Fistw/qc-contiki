@@ -1,5 +1,6 @@
 #include "tdoa_decadriver.h"
 #include "decadriver/deca_regs.h"
+#include "decadriver/deca_device_api.h"
 
 void dwGetSystemTimestamp(dwTime_t *time)
 {
@@ -33,9 +34,11 @@ uint8_t dwStartTransmit(dwTime_t *txTime)
     int8_t irq_status = dw1000_disable_interrupt();
     /* Switch off radio before setting it to transmit
      * It also clears pending interrupts */
+//	printf("before: %d\n", dwt_read32bitreg(SYS_STATUS_ID));
     dwt_forcetrxoff();
+//	printf("after: %d\n", dwt_read32bitreg(SYS_STATUS_ID));
 
-    dwt_setdelayedtrxtime(txTime->low32);
+    dwt_setdelayedtrxtime(txTime->high32);
     /* Radio starts listening certain delay (in UWB microseconds) after TX */
     dwt_setrxaftertxdelay(0);
 

@@ -196,7 +196,7 @@ main(void)
   set_rf_params();
 
   /* Init pseudo-random generator with a chip-id based seed */ 
-  //random_init(0xFFFF & dwt_getpartid());
+  random_init(0xFFFF & dwt_getpartid());
 
   //process_start(&sensors_process, NULL);
 
