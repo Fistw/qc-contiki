@@ -97,6 +97,9 @@ static bool frame_pending;
 static bool auto_ack_enabled;
 static bool wait_ack_txdone;
 static volatile bool tx_done; /* flag indicating the end of TX */
+
+static dwTime_t rxTime = {.full = 0};
+static dwTime_t regTxTime = {.full = 0};
 /*---------------------------------------------------------------------------*/
 PROCESS(dw1000_process, "DW1000 driver");
 #if DEBUG
@@ -145,6 +148,9 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     // dw1000_range_reset();
     // rx_rng_ok_cb(cb_data);
     dwt_readrxtimestamp(rxTime.raw);
+    dwTime_t rawtime = {.full = 0};
+    dwt_readrxrawtime(rawtime.raw);
+    printf("rawtime: %u, rxTime: %u, rawtime-rxTime: %u\n", rawtime.low32, rxTime.low32, rawtime.low32-rxTime.low32);
 #endif
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
@@ -208,7 +214,9 @@ static void
 tx_conf_cb(const dwt_cb_data_t *cb_data)
 {
 	printf("tx_conf_cb is called.\n");
-	printf("%d\n", cb_data->status);
+	dwt_readtxtimestamp(regTxTime.raw);
+	//printf("regTxTime: %u\n", regTxTime.low32);
+	//printf("%d\n", cb_data->status);
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
 
@@ -554,7 +562,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
         /* Copy the received frame to packetbuf */
         dw1000_radio_read(packetbuf_dataptr(), data_len);
-        handleRxPacket(packetbuf_dataptr(), data_len); //data_len不包括2字节的crc
+        handleRxPacket(rxTime.low32, packetbuf_dataptr(), data_len, regTxTime.low32); //data_len不包括2字节的crc
         packetbuf_set_datalen(data_len);
 
         /* Re-enable RX to keep listening */

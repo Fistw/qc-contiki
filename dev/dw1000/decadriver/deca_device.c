@@ -850,6 +850,20 @@ void dwt_readrxtimestamp(uint8 * timestamp)
     dwt_readfromdevice(RX_TIME_ID, RX_TIME_RX_STAMP_OFFSET, RX_TIME_RX_STAMP_LEN, timestamp) ; // Get the adjusted time of arrival
 }
 
+void dwt_readrxrawtime(uint8 * rawtime)
+{
+	dwt_readfromdevice(RX_TIME_ID, RX_TIME_FP_RAWST_OFFSET, RX_TIME_RX_STAMP_LEN, rawtime);
+}
+
+void dwt_readrxantennadelay(uint8 * rxantenna)
+{
+	dwt_readfromdevice(LDE_IF_ID, LDE_RXANTD_OFFSET, 2, rxantenna);
+}
+
+void dwt_readtxantennadelay(uint8 * txantenna)
+{
+	dwt_readfromdevice(TX_ANTD_ID, TX_ANTD_OFFSET, 2, txantenna);
+}
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn dwt_readrxtimestamphi32()
  *

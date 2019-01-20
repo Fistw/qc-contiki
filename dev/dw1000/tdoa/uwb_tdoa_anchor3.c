@@ -35,7 +35,7 @@
 #define TDMA_HIGH_RES_RAND_S ( 1e-3 )
 #define TDMA_HIGH_RES_RAND (uint64_t)( TDMA_HIGH_RES_RAND_S * 499.2e6 * 128 )
 
-#define ANCHOR_LIST_UPDATE_INTERVAL 1000; //Anchor列表更新间隔
+#define ANCHOR_LIST_UPDATE_INTERVAL 5000; //Anchor列表更新间隔
 
 #define CLOCK_CORRECTION_BUCKET_MAX 4
 #define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
@@ -348,6 +348,9 @@ static double calculateClockCorrection(anchorContext_t *anchorCtx, int remoteTxS
     uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
     uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
 
+//    printf("tickCountRemote: %u, remoteTx: %u, anchorCtx->txTimeStamp: %u\n", tickCountRemote, remoteTx, anchorCtx->txTimeStamp);
+//    printf("tickCountLocal: %u, rx: %u, anchorCtx->rxTimeStamp: %u\n", tickCountLocal, rx, anchorCtx->rxTimeStamp);
+
     if (tickCountRemote != 0)
     {
         result = (double)tickCountLocal / (double)tickCountRemote;
@@ -374,27 +377,44 @@ static bool emptyClockCorrectionBucket(anchorContext_t *anchorCtx)
 
     return true;
 }
-
+void doubleToInt(double a)
+{
+	int i1 = a;
+	int i2 = (a-i1)*1e9;
+	printf("%d.%09d\n",i1,i2);
+}
 static bool updateClockCorrection(anchorContext_t *anchorCtx, double clockCorrection)
 {
     const double diff = clockCorrection - anchorCtx->clockCorrection;
     bool sampleIsAccepted = false;
-
-    if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE)
+//    printf("clockCorrection: ");
+//    doubleToInt(clockCorrection);
+//    printf("anchoreCtx->clockCorrection: ");
+//    doubleToInt(anchorCtx->clockCorrection);
+//    printf("diff: ");
+//    doubleToInt(diff);
+//    printf("\n");
+    //if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE)
+    if(-6e-1 < diff && diff < 6e-1)
     {
         // LP filter
         anchorCtx->clockCorrection = anchorCtx->clockCorrection * (1.0d - CLOCK_CORRECTION_FILTER) + clockCorrection * CLOCK_CORRECTION_FILTER;
 
         fillClockCorrectionBucket(anchorCtx);
         sampleIsAccepted = true;
+        //printf("sampleIsAccepted:%d\n", sampleIsAccepted);
     }
     else
     {
         if (emptyClockCorrectionBucket(anchorCtx))
         {
-            if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX)
-            {
+            printf("emptyClockCorrectionBucket\n");
+        	//if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX)
+            if(1-2e-1 < clockCorrection && clockCorrection < 1+2e-1)
+        	{
                 anchorCtx->clockCorrection = clockCorrection;
+                //printf("after-anchoreCtx->clockCorrection: ");
+                //doubleToInt(anchorCtx->clockCorrection);
             }
         }
     }
@@ -436,13 +456,26 @@ static bool extractFromPacket(const rangePacket3_t *rangePacket, uint32_t *remot
 static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
 { //chenxin:好像是计算基站0，1之间的tof，不过这样的话clockCorrection也就是基站0，1之间的了
     // Check that the remote received seq nr is our latest tx seq nr
+	printf("remoteRxSeqNr: %d, ctx.seqNr: %d\n", remoteRxSeqNr, ctx.seqNr);
     if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d)
     {
         uint32_t localTime = rx - ctx.txTime;
         uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
         uint32_t distance = (localTime - remoteTime) / 2;
+//        printf("localTimerx: %u\n", rx);
+//        printf("localTimectx.txTime: %u\n", ctx.txTime);
+//        printf("remoteTimeremoteTx: %u\n", remoteTx);
+//        printf("remoteTimeremoteRx: %u\n", remoteRx);
+//        printf("localTime: %u, remoteTime: %u\n",localTime, remoteTime);
+        printf("distance: %u\n", distance);
 
-        return distance & 0xfffful;
+        //return distance & 0xfffful;
+        if(distance > 16455)
+        {
+        	return distance-16455;
+        }else{
+        	return 16455-distance;
+        }
     }
     else
     {
@@ -455,22 +488,24 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
     printf("ID: %d\n", remoteAnchorId);
 
-    const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
-    uint32_t remoteTx = rangePacket->header.txTimeStamp;
-    uint8_t remoteTxSeqNr = rangePacket->header.seq;
-    printf("remote: %d %d\n", remoteTx, remoteTxSeqNr);
-
     ctx.anchorRxCount[remoteAnchorId]++;
     anchorContext_t *anchorCtx = getContext(remoteAnchorId);
     if (anchorCtx)
     {
-        const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
+    	printf("anchorCtx->clockCorrection: ");
+    	doubleToInt(anchorCtx->clockCorrection);
+    	const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
 
         uint32_t remoteTx = rangePacket->header.txTimeStamp;
         uint8_t remoteTxSeqNr = rangePacket->header.seq;
-        printf("remote: %d %d\n", remoteTx, remoteTxSeqNr);
+        printf("remote: %u %d\n", remoteTx, remoteTxSeqNr);
 
         double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
+//        clockCorrection = 1;
+        int i1 = clockCorrection;
+        int i2 = (clockCorrection - i1) * 1000000000;
+        printf("clockCorrection: %d.%09d\n", i1, i2);
+
         if (updateClockCorrection(anchorCtx, clockCorrection))
         {
             anchorCtx->isDataGoodForTransmission = true;
@@ -478,17 +513,27 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
             uint32_t remoteRx = 0;
             uint8_t remoteRxSeqNr = 0;
             bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
+            printf("dataFound: %d\n", dataFound);
             if (dataFound)
             {
                 uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+                //printf("dist: %d\n", distance);
 
                 // TODO krri Remove outliers in distances
-                if (distance > MIN_TOF)
-                {
-                    anchorCtx->distance = distance;
-                    //   anchorCtx->distanceUpdateTime = xTaskGetTickCount();
-                    anchorCtx->distanceUpdateTime = clock_time();
-                }
+//                if (distance > MIN_TOF)
+//                {
+//                    anchorCtx->distance = distance;
+//                    printf("dist: %u\n", distance);
+//                    //   anchorCtx->distanceUpdateTime = xTaskGetTickCount();
+//                    anchorCtx->distanceUpdateTime = clock_time();
+//                }
+                anchorCtx->distance = distance;
+                double dd = (double)distance/(499.2e6*128)*299792458;
+                int i1 = dd;
+                int i2 = (dd-i1)*1e3;
+                printf("dist: %u, %d.%d\n", distance, i1,i2);
+                //   anchorCtx->distanceUpdateTime = xTaskGetTickCount();
+                anchorCtx->distanceUpdateTime = clock_time();
             }
         }
         else
@@ -502,7 +547,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     }
 }
 
-void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
+void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t regTxTime)
 {
     static packet_t rxPacket;
     uint8_t *prxPacket = &rxPacket;
@@ -522,7 +567,9 @@ void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
     	printf("Not a TDOA3 Packet.\n");
     	return;
     }
-    handleRangePacket(rxTime.low32, &rxPacket);
+    //printf("rxTime2: %u\n", rxTime);
+    printf("regTxTime: %u, ctx.txTime: %u, regTxTime-ctx.txTime: %u\n", regTxTime, ctx.txTime, regTxTime-ctx.txTime);
+    handleRangePacket(rxTime, &rxPacket);
     //   rxPacket.payload[0] = 0;
 
     //   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
@@ -544,6 +591,15 @@ void handleRxPacket(const uint8_t *packetbuf, const uint16_t data_len)
     //     // Do nothing
     //     break;
     //   }
+
+    for(int i = 0; i < 256; i++)
+    {
+    	int index = ctx.anchorCtxLookup[i];
+    	if(index != 0xff){
+    		anchorContext_t* panchorCtx = &ctx.anchorCtx[index];
+    		printf("index: %d, distance: %d\n", index, panchorCtx->distance);
+    	}
+    }
 }
 
 // Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 and round up
@@ -558,8 +614,8 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
     dwTime_t transmitTime = {.full = 0};
     //////////////////////////////////
     dwGetSystemTimestamp(&transmitTime);
-    printf("before: %u %u\n", transmitTime.high8, transmitTime.low32);
-    printf("before: %u %u\n", transmitTime.high32, transmitTime.low8);
+//    printf("before: %u %u\n", transmitTime.high8, transmitTime.low32);
+//    printf("before: %u %u\n", transmitTime.high32, transmitTime.low8);
     // Add guard and preamble time
     transmitTime.full += TDMA_GUARD_LENGTH*10;
     transmitTime.full += PREAMBLE_LENGTH*10;
@@ -577,8 +633,8 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
     // DW1000 can only schedule time with 9 LSB at 0, adjust for it
     adjustTxRxTime(&transmitTime);
 
-    printf("after: %u %u\n", transmitTime.high8, transmitTime.low32);
-    printf("after: %u %u\n", transmitTime.high32, transmitTime.low8);
+//    printf("after: %u %u\n", transmitTime.high8, transmitTime.low32);
+//    printf("after: %u %u\n", transmitTime.high32, transmitTime.low8);
     return transmitTime;
 }
 
@@ -588,6 +644,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
     // rangePacket->header.type already populated
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
+    printf("txTime: %u, seq: %d\n", ctx.txTime, ctx.seqNr);
 
     uint8_t remoteAnchorCount = 0;
     uint8_t *anchorDataPtr = &rangePacket->remoteAnchorData;
@@ -649,12 +706,12 @@ static void setTxData(dwDevice_t *dev)
 
     int rangePacketSize = populateTxData((rangePacket3_t *)txPacket.payload);
 
-    printf("send:\n");
-    for (int i = 0; i < rangePacketSize; i++)
-    {
-    	printf("%d ", txPacket.payload[i]);
-    }
-    printf("\n");
+//    printf("send:\n");
+//    for (int i = 0; i < rangePacketSize; i++)
+//    {
+//    	printf("%d ", txPacket.payload[i]);
+//    }
+//    printf("\n");
 
     // LPP anchor position is currently sent in all packets
     // if (uwbConfig->positionEnabled)
@@ -676,6 +733,9 @@ static void setTxData(dwDevice_t *dev)
 static void setupTx(dwDevice_t *dev)
 {
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
+//    printf("txTimebefore: %u",txTime.low32);
+//    txTime.full += 16455;
+//    printf("txTimeafter: %u",txTime.low32);
     ctx.txTime = txTime.low32;
     ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
 
@@ -688,7 +748,7 @@ static void setupTx(dwDevice_t *dev)
     // dwSetTxRxTime(dev, txTime);
 
     int ret = dwStartTransmit(&txTime);
-    printf("ret = %d\n", ret);
+    //printf("ret = %d\n", ret);
 //    if (ret == 0)
 //    while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS))
 //    {
@@ -706,7 +766,7 @@ static uint32_t randomizeDelayToNextTx()
     uint32_t delay = ctx.averageTxDelay + r % interval - interval / 2;
 
 //    return delay;
-    return 3000;
+    return 30000;
 }
 
 // 数据初始化
@@ -740,6 +800,11 @@ void tdoa3Init(uwbConfig_t *config)
 void tdoa3UwbEvent(dwDevice_t *dev)
 {
 	printf("tdoa3uwbevent is called.\n");
+//	dwTime_t txantenna = {.full = 0};
+//	dwTime_t rxantenna = {.full = 0};
+//	dwt_readtxantennadelay(txantenna.raw[3]);
+//	dwt_readrxantennadelay(rxantenna.raw[3]);
+//	printf("txantenna: %u, rxantenna: %u\n", txantenna.low32, rxantenna.low32);
     uint32_t now = clock_time();
     if (now > ctx.nextAnchorListUpdate)
     {

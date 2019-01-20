@@ -51,7 +51,7 @@ typedef union dwTime_u {
         uint32_t high32;
     } __attribute__((packed));
 } dwTime_t;
-static dwTime_t rxTime = {.full = 0};
+
 /**
  * DW device type. Contains the context of a dw1000 device and should be passed
  * as first argument of most of the driver functions.

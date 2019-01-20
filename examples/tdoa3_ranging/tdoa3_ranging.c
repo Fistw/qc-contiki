@@ -25,11 +25,10 @@ PROCESS_THREAD(toda3_ranging, ev, data)
 {
     static uwbConfig_t *uwbConfig;
     static dwDevice_t *dev;
-    static uint32_t timeout_ms = 10000;
+    static uint32_t timeout_ms = 30;
     static struct etimer et;
     PROCESS_BEGIN();
     dw1000_configure(&radio_config);
-    clock_wait(10000);
     printf("Process begin\n");
     uwbConfig = uwbGetConfig();
     tdoa3Init(uwbConfig);
