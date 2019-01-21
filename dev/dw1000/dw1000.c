@@ -562,7 +562,11 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
         /* Copy the received frame to packetbuf */
         dw1000_radio_read(packetbuf_dataptr(), data_len);
+#if TDOA_DEV_TAG
+        handleTagRxPacket(rxTime.low32, packetbuf_dataptr(), data_len);
+#else
         handleRxPacket(rxTime.low32, packetbuf_dataptr(), data_len, regTxTime.low32); //data_len不包括2字节的crc
+#endif
         packetbuf_set_datalen(data_len);
 
         /* Re-enable RX to keep listening */
