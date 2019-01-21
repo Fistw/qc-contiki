@@ -141,8 +141,9 @@ static void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const u
 
 static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 {
-  /////////////////////// 这个是啥
+  // kalman 估计方法暂不使用
   // estimatorKalmanEnqueueTDOA(tdoaMeasurement);
+  
 
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.
