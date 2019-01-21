@@ -150,7 +150,7 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     dwt_readrxtimestamp(rxTime.raw);
     dwTime_t rawtime = {.full = 0};
     dwt_readrxrawtime(rawtime.raw);
-    printf("rawtime: %u, rxTime: %u, rawtime-rxTime: %u\n", rawtime.low32, rxTime.low32, rawtime.low32-rxTime.low32);
+    //printf("rawtime: %u, rxTime: %u, rawtime-rxTime: %u\n", rawtime.low32, rxTime.low32, rawtime.low32-rxTime.low32);
 #endif
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
