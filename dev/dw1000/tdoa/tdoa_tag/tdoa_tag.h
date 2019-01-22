@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-static void tdoaTagInit();
-static void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len);
-
+void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len);
+void tdoaTagInit();
 #endif

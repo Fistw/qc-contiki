@@ -5,7 +5,7 @@
 static struct uwbConfig_s config =
     {
         address :
-            {2, 0, 0, 0, 0, 0, 0xcf, 0xbc},
+            {0, 0, 0, 0, 0, 0, 0xcf, 0xbc},
     };
 
 struct uwbConfig_s *uwbGetConfig()

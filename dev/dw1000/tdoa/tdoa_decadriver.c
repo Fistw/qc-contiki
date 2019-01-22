@@ -37,7 +37,7 @@ uint8_t dwStartTransmit(dwTime_t *txTime)
 //	printf("before: %d\n", dwt_read32bitreg(SYS_STATUS_ID));
     dwt_forcetrxoff();
 //	printf("after: %d\n", dwt_read32bitreg(SYS_STATUS_ID));
-
+    txTime->full -= 16455;
     dwt_setdelayedtrxtime(txTime->high32);
     /* Radio starts listening certain delay (in UWB microseconds) after TX */
     dwt_setrxaftertxdelay(0);

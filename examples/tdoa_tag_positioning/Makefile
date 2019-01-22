@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = toda_tag_positioning
+CONTIKI_PROJECT = tdoa_tag_positioning
 all: $(CONTIKI_PROJECT)
 
 # Add EVB1000 platform folder

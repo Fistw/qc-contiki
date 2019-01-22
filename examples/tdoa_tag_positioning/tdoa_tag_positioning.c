@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 #include "contiki.h"
-#include "dw1000.h"
 
+#include "dw1000.h"
 #include "tdoa/tdoa_tag/tdoa_tag.h"
 
 // dwt_config_t为dw1000 deca中定义的
@@ -19,15 +19,16 @@ dwt_config_t radio_config = {
     .sfdTO = (129 + 8 - 8),
 };
 
-PROCESS(toda_tag_positioning, "Tag position using TDoA");
-AUTOSTART_PROCESSES(&toda_tag_positioning);
+PROCESS(tdoa_tag_positioning, "Tag position using TDoA");
+AUTOSTART_PROCESSES(&tdoa_tag_positioning);
 
-PROCESS_THREAD(toda_tag_positioning, ev, data)
+PROCESS_THREAD(tdoa_tag_positioning, ev, data)
 {
     PROCESS_BEGIN();
 
     dw1000_configure(&radio_config);
     printf("Process begin\n");
+//    onEvent(2);
     tdoaTagInit();
 
     PROCESS_END();

@@ -68,7 +68,7 @@ static int updateRemoteData(tdoaAnchorContext_t *anchorCtx, const void *payload)
   return (uint8_t *)anchorDataPtr - (uint8_t *)packet;
 }
 
-static void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
+void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
 {
   int dataLength = data_len;
 
@@ -110,11 +110,13 @@ static void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const u
   tdoaStorageSetRxTxData(&anchorCtx, rxAn_by_T_in_cl_T, txAn_in_cl_An, seqNr);
 
   // 粗暴设置基站位置
-  if (anchorId == 1)
+  if (anchorId == 2)
   {
     tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.0);
   }
-
+  else{
+	  tdoaStorageSetAnchorPosition(&anchorCtx, 1.0,1.0,1.0);
+  }
   // rangingOk = true;
 }
 
@@ -164,13 +166,12 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 }
 
 // 编译这部分忽略警告
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-static void tdoaTagInit()
+//#pragma GCC diagnostic push
+//#pragma GCC diagnostic ignored "-Wunused-parameter"
+void tdoaTagInit()
 {
   uint32_t now_ms = clock_time();
   tdoaEngineInit(&engineState, now_ms, sendTdoaToEstimatorCallback);
-
 #ifdef LPS_2D_POSITION_HEIGHT
   DEBUG_PRINT("2D positioning enabled at %f m height\n", LPS_2D_POSITION_HEIGHT);
 #endif
@@ -183,7 +184,7 @@ static void tdoaTagInit()
 
   // rangingOk = false;
 }
-#pragma GCC diagnostic pop
+//#pragma GCC diagnostic pop
 
 static void onEvent()
 {

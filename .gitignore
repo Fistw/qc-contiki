@@ -60,3 +60,8 @@ tools/
 
 # mac
 .DS_Store
+
+# about compile 
+*.bin
+*.evb1000
+!Makefile.evb1000

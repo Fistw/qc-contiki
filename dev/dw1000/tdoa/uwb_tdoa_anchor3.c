@@ -469,13 +469,13 @@ static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr,
 //        printf("localTime: %u, remoteTime: %u\n",localTime, remoteTime);
         //printf("distance: %u\n", distance);
 
-        //return distance & 0xfffful;
-        if(distance > 16455)
-        {
-        	return distance-16455;
-        }else{
-        	return 16455-distance;
-        }
+        return distance & 0xfffful;
+//        if(distance > 16455)
+//        {
+//        	return distance-16455;
+//        }else{
+//        	return 16455-distance;
+//        }
     }
     else
     {
@@ -736,10 +736,11 @@ static void setTxData(dwDevice_t *dev)
 static void setupTx(dwDevice_t *dev)
 {
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
-    ctx.txTime = txTime.low32;
-    ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
+    txTime.full += 16455l;
+	ctx.txTime = txTime.low32;
+	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
 
-    setTxData(dev);
+	setTxData(dev);
 
     //////////////////////////////////
     // dwNewTransmit(dev);
