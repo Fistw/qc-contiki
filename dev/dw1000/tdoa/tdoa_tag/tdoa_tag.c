@@ -5,6 +5,7 @@
  * 
  */
 
+#include "tdoa_tag.h"
 // 含TDoA3帧结构体
 #include "../tdoa.h"
 // 含packet_t
@@ -108,6 +109,12 @@ static void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const u
   // 设置rxtime和txtime
   tdoaStorageSetRxTxData(&anchorCtx, rxAn_by_T_in_cl_T, txAn_in_cl_An, seqNr);
 
+  // 粗暴设置基站位置
+  if (anchorId == 1)
+  {
+    tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.0);
+  }
+
   // rangingOk = true;
 }
 
@@ -143,7 +150,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 {
   // kalman 估计方法暂不使用
   // estimatorKalmanEnqueueTDOA(tdoaMeasurement);
-  
+  printf("sendTdoaToEstimatorCallback is called\n");
 
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.
@@ -159,7 +166,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 // 编译这部分忽略警告
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-static void initialize(dwDevice_t *dev)
+static void tdoaTagInit()
 {
   uint32_t now_ms = clock_time();
   tdoaEngineInit(&engineState, now_ms, sendTdoaToEstimatorCallback);

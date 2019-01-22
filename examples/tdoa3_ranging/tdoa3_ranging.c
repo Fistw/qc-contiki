@@ -6,16 +6,16 @@
 #include "tdoa/uwb.h"
 
 dwt_config_t radio_config = {
-  .chan = 5,
-  .prf = DWT_PRF_16M,
-  .txPreambLength = DWT_PLEN_128,
-  .dataRate = DWT_BR_6M8,
-  .txCode = 7,
-  .rxCode = 7,
-  .rxPAC = DWT_PAC8,
-  .nsSFD = 0 /* standard */,
-  .phrMode = DWT_PHRMODE_STD,
-  .sfdTO = (129 + 8 - 8),
+    .chan = 5,
+    .prf = DWT_PRF_16M,
+    .txPreambLength = DWT_PLEN_128,
+    .dataRate = DWT_BR_6M8,
+    .txCode = 7,
+    .rxCode = 7,
+    .rxPAC = DWT_PAC8,
+    .nsSFD = 0 /* standard */,
+    .phrMode = DWT_PHRMODE_STD,
+    .sfdTO = (129 + 8 - 8),
 };
 
 PROCESS(toda3_ranging, "Tdoa3 ranging");
