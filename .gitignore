@@ -57,6 +57,12 @@ dkms.conf
 # eclipse
 .project
 tools/
+.cproject
+.settings/
+Debug/
+haha.xml
+hahaha.xml
+*Debug.cfg
 
 # mac
 .DS_Store
