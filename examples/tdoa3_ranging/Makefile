@@ -6,6 +6,7 @@ all: $(CONTIKI_PROJECT)
 
 DEFINES+=PROJECT_CONF_H=\"project-conf.h\"
 
+
 # No network stack for the moment
 CONTIKI_WITH_IPV4 = 0
 CONTIKI_WITH_IPV6 = 0

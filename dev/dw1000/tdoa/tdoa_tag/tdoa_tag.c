@@ -1,21 +1,23 @@
 /*
  * tdoa_tag
  * 
- * 实现TDoA算法中Tag的功能
+ * 瀹炵幇TDoA绠楁硶涓璗ag鐨勫姛鑳�
  * 
  */
 
 #include "tdoa_tag.h"
-// 含TDoA3帧结构体
+// 鍚玊DoA3甯х粨鏋勪綋
 #include "../tdoa.h"
-// 含packet_t
+// 鍚玴acket_t
 #include "../mac.h"
-// 含dwDevice_t dwTime_t定义以及decadriver接口
+// 鍚玠wDevice_t dwTime_t瀹氫箟浠ュ強decadriver鎺ュ彛
 #include "../tdoa_decadriver.h"
-// tag的util模块
+// tag鐨剈til妯″潡
 #include "tdoa_tag_engine.h"
 // #include "tdoa_tag_state.h"
 #include "tdoa_tag_storage.h"
+
+#include "position_estimator/estimator_kalman.h"
 
 static tdoaEngineState_t engineState;
 
@@ -102,14 +104,14 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
   uint32_t now_ms = clock_time();
   // using tdoa_storage to Get AnchorCtx for packet processing
   tdoaEngineGetAnchorCtxForPacketProcessing(&engineState, anchorId, now_ms, &anchorCtx);
-  // 更新数据
+  // 鏇存柊鏁版嵁
   int rangeDataLength = updateRemoteData(&anchorCtx, packet);
-  // 计算位置
+  // 璁＄畻浣嶇疆
   tdoaEngineProcessPacket(&engineState, &anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
-  // 设置rxtime和txtime
+  // 璁剧疆rxtime鍜宼xtime
   tdoaStorageSetRxTxData(&anchorCtx, rxAn_by_T_in_cl_T, txAn_in_cl_An, seqNr);
 
-  // 粗暴设置基站位置
+  // 绮楁毚璁剧疆鍩虹珯浣嶇疆
   if (anchorId == 2)
   {
     tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.0);
@@ -120,7 +122,7 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
   // rangingOk = true;
 }
 
-// // 获取基站位置
+// // 鑾峰彇鍩虹珯浣嶇疆
 // static bool getAnchorPosition(const uint8_t anchorId, point_t *position)
 // {
 //   tdoaAnchorContext_t anchorCtx;
@@ -136,7 +138,7 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
 //   return false;
 // }
 
-// // 获取基站列表
+// // 鑾峰彇鍩虹珯鍒楄〃
 // static uint8_t getAnchorIdList(uint8_t unorderedAnchorList[], const int maxListSize)
 // {
 //   return tdoaStorageGetListOfAnchorIds(engineState.anchorInfoArray, unorderedAnchorList, maxListSize);
@@ -150,9 +152,14 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
 
 static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 {
-  // kalman 估计方法暂不使用
+  // kalman 浼拌鏂规硶鏆備笉浣跨敤
   // estimatorKalmanEnqueueTDOA(tdoaMeasurement);
   printf("sendTdoaToEstimatorCallback is called\n");
+  static point_t *position;
+  estimatorKalman(&position, clock_time(), &tdoaMeasurement);
+  printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(position->x*1000),
+		  	  	  	  	  	  	  	  	    (int)(position->y*1000),
+											(int)(position->z*1000));
 
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.
@@ -165,7 +172,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 #endif
 }
 
-// 编译这部分忽略警告
+// 缂栬瘧杩欓儴鍒嗗拷鐣ヨ鍛�
 //#pragma GCC diagnostic push
 //#pragma GCC diagnostic ignored "-Wunused-parameter"
 void tdoaTagInit()
@@ -177,7 +184,7 @@ void tdoaTagInit()
 #endif
 
   /////////////////////
-  // 设置接收超时
+  // 璁剧疆鎺ユ敹瓒呮椂
   // dwSetReceiveWaitTimeout(dev, TDOA3_RECEIVE_TIMEOUT);
 
   // dwCommitConfiguration(dev);
@@ -193,7 +200,7 @@ static void onEvent()
   // eventReceiveTimeout
   // eventTimeout
 
-  // 更新状态
+  // 鏇存柊鐘舵��
   // uint32_t now_ms = clock_time();
   // tdoaStatsUpdate(&engineState.stats, now_ms);
 }

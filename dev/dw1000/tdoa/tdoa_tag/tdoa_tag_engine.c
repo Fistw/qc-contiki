@@ -9,8 +9,8 @@ in every point. The tag is attached to a physical object and the expected
 velocity is a few m/s, this means that anchors are within range for a time
 period of seconds.
 
-假设标签在大型锚系统中移动。 可以使用任何锚定ID，并且只要在同一区域中不可见，多个锚点甚至可以使用相同的锚定ID。 假设锚密度
-均匀分布在覆盖的体积中，每个点都可以看到5-20个锚。 标签附加到物理对象上，预期速度为几m / s，这意味着锚点在范围内的时间段为秒。
+鍋囪鏍囩鍦ㄥぇ鍨嬮敋绯荤粺涓Щ鍔ㄣ�� 鍙互浣跨敤浠讳綍閿氬畾ID锛屽苟涓斿彧瑕佸湪鍚屼竴鍖哄煙涓笉鍙锛屽涓敋鐐圭敋鑷冲彲浠ヤ娇鐢ㄧ浉鍚岀殑閿氬畾ID銆� 鍋囪閿氬瘑搴�
+鍧囧寑鍒嗗竷鍦ㄨ鐩栫殑浣撶Н涓紝姣忎釜鐐归兘鍙互鐪嬪埌5-20涓敋銆� 鏍囩闄勫姞鍒扮墿鐞嗗璞′笂锛岄鏈熼�熷害涓哄嚑m / s锛岃繖鎰忓懗鐫�閿氱偣鍦ㄨ寖鍥村唴鐨勬椂闂存涓虹銆�
 
 The implementation must handle
 1. An infinite number of anchors, where around 20 are visible at one time
@@ -21,6 +21,7 @@ The implementation must handle
 */
 
 #include <string.h>
+#include <stdio.h>
 
 #include "tdoa_tag_engine.h"
 
@@ -43,13 +44,12 @@ static uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
     return fullTimeStamp & TRUNCATE_TO_ANCHOR_TS_BITMAP;
 }
 
-static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, double distanceDiff, tdoaEngineState_t *engineState)
+static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, const double distanceDiff, tdoaEngineState_t *engineState)
 {
     // tdoaStats_t *stats = &engineState->stats;
 
-    tdoaMeasurement_t tdoa = {
-        .stdDev = MEASUREMENT_NOISE_STD,
-        .distanceDiff = distanceDiff};
+    tdoaMeasurement_t tdoa = {tdoa.stdDev = MEASUREMENT_NOISE_STD,
+    						  tdoa.distanceDiff = distanceDiff};
 
     if (tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
     {
@@ -181,7 +181,7 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
         if (findSuitableAnchor(engineState, &otherAnchorCtx, anchorCtx))
         {
             // engineState->stats.suitableDataFound++;
-            // 计算距离
+            // 璁＄畻璺濈
             double tdoaDistDiff = calcDistanceDiff(&otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
             //
             enqueueTDOA(&otherAnchorCtx, anchorCtx, tdoaDistDiff, engineState);

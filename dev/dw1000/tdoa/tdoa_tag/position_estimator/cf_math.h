@@ -7,7 +7,7 @@
  *
  * Crazyflie control firmware
  *
- * Copyright (C) 2011-2012 Bitcraze AB
+ * Copyright (C) 2018 Bitcraze AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,42 +21,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * stabilizer.h: Stabilizer orchestrator
- */
-#ifndef __STABILIZER_TYPES_H__
-#define __STABILIZER_TYPES_H__
-
-#include <stdint.h>
-#include <stdbool.h>
-
-/* Data structure used by the stabilizer subsystem.
- * All have a timestamp to be set when the data is calculated.
+ * Utilities to simplify unit testing
+ *
  */
 
-/* x,y,z vector */
-struct vec3_s {
-  uint32_t timestamp; // Timestamp when the data was computed
+#pragma once
 
-  float x;
-  float y;
-  float z;
-};
-
-typedef struct vec3_s vector_t;
-typedef struct vec3_s point_t;
-
-typedef struct tdoaMeasurement_s {
-  point_t anchorPosition[2];
-  float distanceDiff;
-  float stdDev;
-} tdoaMeasurement_t;
-
-// Frequencies to bo used with the RATE_DO_EXECUTE_HZ macro. Do NOT use an arbitrary number.
-#define RATE_1000_HZ 1000
-#define RATE_500_HZ 500
-#define RATE_250_HZ 250
-#define RATE_100_HZ 100
-#define RATE_50_HZ 50
-#define RATE_25_HZ 25
-
-#endif
+// Include "arm_math.h". This header generates some warnings, especially in
+// unit tests. We hide them to avoid noise.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
+#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "arm_math.h"
+#pragma GCC diagnostic pop

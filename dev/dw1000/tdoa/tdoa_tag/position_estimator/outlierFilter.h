@@ -7,7 +7,7 @@
  *
  * Crazyflie control firmware
  *
- * Copyright (C) 2011-2012 Bitcraze AB
+ * Copyright (C) 2011-2018 Bitcraze AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,42 +21,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * stabilizer.h: Stabilizer orchestrator
- */
-#ifndef __STABILIZER_TYPES_H__
-#define __STABILIZER_TYPES_H__
-
-#include <stdint.h>
-#include <stdbool.h>
-
-/* Data structure used by the stabilizer subsystem.
- * All have a timestamp to be set when the data is calculated.
+ * outlierFilter.h: Outlier rejection filter for the LPS system
  */
 
-/* x,y,z vector */
-struct vec3_s {
-  uint32_t timestamp; // Timestamp when the data was computed
+#ifndef __OUTLIER_FILTER_H__
+#define __OUTLIER_FILTER_H__
 
-  float x;
-  float y;
-  float z;
-};
+#include "agv_types.h"
 
-typedef struct vec3_s vector_t;
-typedef struct vec3_s point_t;
+bool outlierFilterValidateTdoaSimple(const tdoaMeasurement_t* tdoa);
+bool outlierFilterVaildateTdoaSteps(const tdoaMeasurement_t* tdoa, const float error, const vector_t* jacobian, const point_t* estPos);
 
-typedef struct tdoaMeasurement_s {
-  point_t anchorPosition[2];
-  float distanceDiff;
-  float stdDev;
-} tdoaMeasurement_t;
+void outlierFilterReset();
 
-// Frequencies to bo used with the RATE_DO_EXECUTE_HZ macro. Do NOT use an arbitrary number.
-#define RATE_1000_HZ 1000
-#define RATE_500_HZ 500
-#define RATE_250_HZ 250
-#define RATE_100_HZ 100
-#define RATE_50_HZ 50
-#define RATE_25_HZ 25
-
-#endif
+#endif // __OUTLIER_FILTER_H__

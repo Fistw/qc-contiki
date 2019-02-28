@@ -55,29 +55,9 @@
 #define __ESTIMATOR_KALMAN_H__
 
 #include <stdint.h>
-#include "../agv_types.h"
+#include "agv_types.h"
 
 void estimatorKalmanInit(void);
-bool estimatorKalmanTest(void);
-void estimatorKalman(state_t *state, sensorData_t *sensors, control_t *control, const uint32_t tick);
-
-
-/**
- * The filter supports the incorporation of additional sensors into the state estimate via the following functions:
- */
-bool estimatorKalmanEnqueueTDOA(tdoaMeasurement_t *uwb);
-bool estimatorKalmanEnqueuePosition(positionMeasurement_t *pos);
-bool estimatorKalmanEnqueueDistance(distanceMeasurement_t *dist);
-bool estimatorKalmanEnqueueTOF(tofMeasurement_t *tof);
-bool estimatorKalmanEnqueueAsoluteHeight(heightMeasurement_t *height);
-bool estimatorKalmanEnqueueFlow(flowMeasurement_t *flow);
-
-/*
- * Methods used in the optical flow implementation to get elevation and reset position
- */
-float estimatorKalmanGetElevation();
-void estimatorKalmanSetShift(float deltax, float deltay);
-
-void estimatorKalmanGetEstimatedPos(point_t* pos);
+void estimatorKalman(point_t *position, const uint32_t tick, const tdoaMeasurement_t *tdoa);
 
 #endif // __ESTIMATOR_KALMAN_H__
