@@ -170,5 +170,5 @@ LDFLAGS += -Wl,-Map=$(@:.elf=-$(TARGET).map)
 %.lst: %.elf
 	$(OBJDUMP) $(OBJDUMP_FLAGS) $< > $@
 
-#%.$(TARGET): %.elf %.hex %.bin
-#	cp $< $@
+%.$(TARGET): %.elf %.hex %.bin
+	cp $< $@

@@ -63,6 +63,7 @@ Debug/
 haha.xml
 hahaha.xml
 *Debug.cfg
+Release/
 
 # mac
 .DS_Store

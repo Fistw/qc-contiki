@@ -60,6 +60,12 @@
 #include <math.h>
 #include "cf_math.h"
 #include "arm_math.h"
+#include "contiki.h"
+
+#ifndef __errno
+#define __errno 1
+#endif
+#define configASSERT(x)
 
 //#define KALMAN_USE_BARO_UPDATE
 //#define KALMAN_NAN_CHECK
@@ -173,8 +179,8 @@ static inline void mat_inv(const arm_matrix_instance_f32 * pSrc, arm_matrix_inst
 { configASSERT(ARM_MATH_SUCCESS == arm_mat_inverse_f32(pSrc, pDst)); }
 static inline void mat_mult(const arm_matrix_instance_f32 * pSrcA, const arm_matrix_instance_f32 * pSrcB, arm_matrix_instance_f32 * pDst)
 { configASSERT(ARM_MATH_SUCCESS == arm_mat_mult_f32(pSrcA, pSrcB, pDst)); }
-static inline float arm_sqrt(float32_t in)
-{ float pOut = 0; arm_status result = arm_sqrt_f32(in, &pOut); configASSERT(ARM_MATH_SUCCESS == result); return pOut; }
+//static inline float arm_sqrt(float32_t in)
+//{ float pOut = 0; arm_status result = arm_sqrt_f32(in, &pOut); configASSERT(ARM_MATH_SUCCESS == result); return pOut; }
 
 #ifdef KALMAN_NAN_CHECK
 static void stateEstimatorAssertNotNaN() {
@@ -222,7 +228,7 @@ void estimatorKalman(point_t *position, const uint32_t tick, const tdoaMeasureme
   // Tracks whether an update to the state has been made, and the state therefore requires finalization
   bool doneUpdate = false;
 
-  uint32_t osTick = xTaskGetTickCount(); // would be nice if this had a precision higher than 1ms...
+  uint32_t osTick = clock_time(); // would be nice if this had a precision higher than 1ms...
 
 #ifdef KALMAN_DECOUPLE_XY
   // Decouple position states
@@ -254,7 +260,7 @@ void estimatorKalman(point_t *position, const uint32_t tick, const tdoaMeasureme
     stateEstimatorUpdateWithTDOA(&tdoa);
     doneUpdate = true;
   } */
-  stateEstimatorUpdateWithTDOA(&tdoa);
+  stateEstimatorUpdateWithTDOA(tdoa);
   doneUpdate = true;
 
   /**
@@ -516,8 +522,8 @@ static void stateEstimatorExternalizeState(point_t *position, uint32_t tick)
 }
 
 void estimatorKalmanInit(void) {
-  lastPrediction = xTaskGetTickCount();
-  lastPNUpdate = xTaskGetTickCount();
+  lastPrediction = clock_time();
+  lastPNUpdate = clock_time();
 
   // Reset all matrices to 0 (like uppon system reset)
   memset(P, 0, sizeof(S));

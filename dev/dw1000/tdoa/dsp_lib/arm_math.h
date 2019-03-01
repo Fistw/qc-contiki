@@ -5742,6 +5742,9 @@ void arm_rfft_fast_f32(
    * @return The function returns ARM_MATH_SUCCESS if input value is positive value or ARM_MATH_ARGUMENT_ERROR if
    * <code>in</code> is negative value and returns zero output for negative values.
    */
+#ifndef __errno
+#define __errno 1
+#endif
   static __INLINE arm_status arm_sqrt_f32(
   float32_t in,
   float32_t * pOut)

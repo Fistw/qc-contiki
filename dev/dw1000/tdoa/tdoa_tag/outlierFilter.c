@@ -26,7 +26,6 @@
 
 #include <math.h>
 #include "outlierFilter.h"
-#include "stabilizer_types.h"
 
 #define BUCKET_ACCEPTANCE_LEVEL 2
 #define MAX_BUCKET_FILL 10
