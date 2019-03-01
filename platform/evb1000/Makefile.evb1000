@@ -17,13 +17,17 @@ CONTIKI_TARGET_SOURCEFILES += dw1000-arch.c
 # CONTIKI_TARGET_SOURCEFILES += deca_mutex.c deca_sleep.c deca_spi.c port.c stm32f10x_it.c syscalls.c
 
 #add dsp_lib
-CFLAGS += -I../../dev/dw1000/tdoa/dsp_lib -DARM_MATH_CM3 -D__errno
+<<<<<<< HEAD
+#CFLAGS += -I../../dev/dw1000/tdoa/dsp_lib -DARM_MATH_CM3 -D__errno
 #LDFLAGS += -L../../dev/dw1000/tdoa/dsp_lib
+=======
+CFLAGS += -I../../dev/dw1000/tdoa/dsp_lib -DARM_MATH_CM3 -D__FPU_PRESENT = 0
+>>>>>>> b54ad4d6362d3483ff66fffee66422a0cfe9d06e
 #LIBS += -larm_cortexM3b_math.lib
 
 # Decawave Driver
 CONTIKIDIRS += ../../dev/dw1000 ../../dev/dw1000/decadriver ../../dev/dw1000/tdoa ../../dev/dw1000/tdoa/tdoa_tag 
-CONTIKIDIRS += ../../dev/dw1000/tdoa/dsp_lib
+//CONTIKIDIRS += ../../dev/dw1000/tdoa/dsp_lib
 #CONTIKIDIRS += ../../dev/dw1000/tdoa/tdoa_tag/position_estimator 
 CONTIKI_TARGET_SOURCEFILES += deca_device.c deca_params_init.c deca_range_tables.c
 CONTIKI_TARGET_SOURCEFILES += dw1000.c dw1000-ranging.c

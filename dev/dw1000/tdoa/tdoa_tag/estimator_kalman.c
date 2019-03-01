@@ -59,8 +59,9 @@
 //#include "outlierFilter.h"
 #include <math.h>
 #include "cf_math.h"
-#include "arm_math.h"
+#include "mat_math.h"
 #include "contiki.h"
+#include <string.h>
 
 #ifndef __errno
 #define __errno 1
@@ -451,8 +452,10 @@ static void stateEstimatorUpdateWithTDOA(tdoaMeasurement_t *tdoa)
     float dy0 = y - y0;
     float dz0 = z - z0;
 
-    float d1 = sqrtf(powf(dx1, 2) + powf(dy1, 2) + powf(dz1, 2));
-    float d0 = sqrtf(powf(dx0, 2) + powf(dy0, 2) + powf(dz0, 2));
+    //float d1 = sqrtf(powf(dx1, 2) + powf(dy1, 2) + powf(dz1, 2));
+    //float d0 = sqrtf(powf(dx0, 2) + powf(dy0, 2) + powf(dz0, 2));
+float d1 = 1;
+float d0 = 1;
 
     float predicted = d1 - d0;
     float error = measurement - predicted;

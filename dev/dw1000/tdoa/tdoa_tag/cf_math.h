@@ -34,5 +34,5 @@
 #pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
 #pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-#include "arm_math.h"
+#include "mat_math.h"
 #pragma GCC diagnostic pop

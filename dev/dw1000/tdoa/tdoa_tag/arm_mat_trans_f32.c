@@ -46,7 +46,7 @@
  * \image html MatrixTranspose.gif "Transpose of a 3 x 3 matrix"    
  */
 
-#include "arm_math.h"
+#include "mat_math.h"
 
 /**    
  * @ingroup groupMatrix    
@@ -70,22 +70,16 @@ arm_status arm_mat_trans_f32(
   const arm_matrix_instance_f32 * pSrc,
   arm_matrix_instance_f32 * pDst)
 {
-  float32_t *pIn = pSrc->pData;                  /* input data matrix pointer */
-  float32_t *pOut = pDst->pData;                 /* output data matrix pointer */
-  float32_t *px;                                 /* Temporary output data matrix pointer */
+  float *pIn = pSrc->pData;                  /* input data matrix pointer */
+  float *pOut = pDst->pData;                 /* output data matrix pointer */
+  float *px;                                 /* Temporary output data matrix pointer */
   uint16_t nRows = pSrc->numRows;                /* number of rows */
   uint16_t nColumns = pSrc->numCols;             /* number of columns */
-
-#ifndef ARM_MATH_CM0_FAMILY
 
   /* Run the below code for Cortex-M4 and Cortex-M3 */
 
   uint16_t blkCnt, i = 0u, row = nRows;          /* loop counters */
   arm_status status;                             /* status of matrix transpose  */
-
-
-#ifdef ARM_MATH_MATRIX_CHECK
-
 
   /* Check for matrix mismatch condition */
   if((pSrc->numRows != pDst->numCols) || (pSrc->numCols != pDst->numRows))
@@ -94,7 +88,6 @@ arm_status arm_mat_trans_f32(
     status = ARM_MATH_SIZE_MISMATCH;
   }
   else
-#endif /*    #ifdef ARM_MATH_MATRIX_CHECK    */
 
   {
     /* Matrix transpose by exchanging the rows with columns */
@@ -153,50 +146,6 @@ arm_status arm_mat_trans_f32(
         /* Decrement the column loop counter */
         blkCnt--;
       }
-
-#else
-
-  /* Run the below code for Cortex-M0 */
-
-  uint16_t col, i = 0u, row = nRows;             /* loop counters */
-  arm_status status;                             /* status of matrix transpose  */
-
-
-#ifdef ARM_MATH_MATRIX_CHECK
-
-  /* Check for matrix mismatch condition */
-  if((pSrc->numRows != pDst->numCols) || (pSrc->numCols != pDst->numRows))
-  {
-    /* Set status as ARM_MATH_SIZE_MISMATCH */
-    status = ARM_MATH_SIZE_MISMATCH;
-  }
-  else
-#endif /*      #ifdef ARM_MATH_MATRIX_CHECK    */
-
-  {
-    /* Matrix transpose by exchanging the rows with columns */
-    /* row loop     */
-    do
-    {
-      /* The pointer px is set to starting address of the column being processed */
-      px = pOut + i;
-
-      /* Initialize column loop counter */
-      col = nColumns;
-
-      while(col > 0u)
-      {
-        /* Read and store the input element in the destination */
-        *px = *pIn++;
-
-        /* Update the pointer px to point to the next row of the transposed matrix */
-        px += nRows;
-
-        /* Decrement the column loop counter */
-        col--;
-      }
-
-#endif /* #ifndef ARM_MATH_CM0_FAMILY */
 
       i++;
 
