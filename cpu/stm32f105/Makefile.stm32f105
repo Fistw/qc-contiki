@@ -138,7 +138,7 @@ FLASH_START_ADDRESS = 0x08000000
 
 CFLAGS += -ggdb
 CFLAGS += -DSTM32F105RC -DSTM32F10X_CL -DUSE_STDPERIPH_DRIVER -D__ASSEMBLY__
-CFLAGS += -mthumb -mcpu=cortex-m3 -march=armv7-m -mfloat-abi=hard
+CFLAGS += -mthumb -mcpu=cortex-m3 -march=armv7-m -mfloat-abi=soft
 CFLAGS += -g -std=gnu99 -c
 CFLAGS += -Wall #-Wextra
 CFLAGS += -nostdlib -s -ffunction-sections 
