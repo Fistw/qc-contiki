@@ -173,14 +173,16 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
 {
     // bool timeIsGood = updateClockCorrection(anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, &engineState->stats);
     bool timeIsGood = updateClockCorrection(anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
+
     if (timeIsGood)
     {
         // engineState->stats.timeIsGood++;
-
+    	printf("TimeIsGood\n");
         tdoaAnchorContext_t otherAnchorCtx;
         if (findSuitableAnchor(engineState, &otherAnchorCtx, anchorCtx))
         {
-            // engineState->stats.suitableDataFound++;
+            printf("found suitable anchor\n");
+        	// engineState->stats.suitableDataFound++;
             // 计算距离差
             double tdoaDistDiff = calcDistanceDiff(&otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
             // 根据新的tdoa数据更新位置

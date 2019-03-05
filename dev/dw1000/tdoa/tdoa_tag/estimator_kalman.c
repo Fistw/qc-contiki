@@ -223,6 +223,9 @@ static void decoupleState(stateIdx_t state)
 
 void estimatorKalman(point_t *position, const uint32_t tick, const tdoaMeasurement_t *tdoa)
 {
+
+	printf("estimatorKalman called!\n");
+
   // If the client (via a parameter update) triggers an estimator reset:
   if (resetEstimation) { estimatorKalmanInit(); resetEstimation = false; }
 
@@ -364,6 +367,8 @@ static void stateEstimatorAddProcessNoise(float dt)
 
 static void stateEstimatorScalarUpdate(arm_matrix_instance_f32 *Hm, float error, float stdMeasNoise)
 {
+
+	printf("stateEstimatorScalarUpdate called!\n");
   // The Kalman gain as a column vector
   static float K[STATE_DIM];
   static arm_matrix_instance_f32 Km = {STATE_DIM, 1, (float *)K};
@@ -386,6 +391,7 @@ static void stateEstimatorScalarUpdate(arm_matrix_instance_f32 *Hm, float error,
 
   // ====== INNOVATION COVARIANCE ======
 
+  printf("stateEstimatorScalarUpdate INNOVATION COVARIANCE!\n");
   mat_trans(Hm, &HTm);
   mat_mult(&Pm, &HTm, &PHTm); // PH'
   float R = stdMeasNoise*stdMeasNoise;
@@ -396,6 +402,7 @@ static void stateEstimatorScalarUpdate(arm_matrix_instance_f32 *Hm, float error,
   configASSERT(!isnan(HPHR));
 
   // ====== MEASUREMENT UPDATE ======
+  printf("stateEstimatorScalarUpdate MEASUREMENT UPDATE!\n");
   // Calculate the Kalman gain and perform the state update
   for (int i=0; i<STATE_DIM; i++) {
     K[i] = PHTd[i]/HPHR; // kalman gain = (PH' (HPH' + R )^-1)
@@ -403,6 +410,7 @@ static void stateEstimatorScalarUpdate(arm_matrix_instance_f32 *Hm, float error,
   }
 
   // ====== COVARIANCE UPDATE ======
+  printf("stateEstimatorScalarUpdate COVARIANCE UPDATE!\n");
   mat_mult(&Km, Hm, &tmpNN1m); // KH
   for (int i=0; i<STATE_DIM; i++) { tmpNN1d[STATE_DIM*i+i] -= 1; } // KH - I
   mat_trans(&tmpNN1m, &tmpNN2m); // (KH - I)'
@@ -423,10 +431,13 @@ static void stateEstimatorScalarUpdate(arm_matrix_instance_f32 *Hm, float error,
       }
     }
   }
+  printf("stateEstimatorScalarUpdate final!\n");
 }
 
 static void stateEstimatorUpdateWithTDOA(tdoaMeasurement_t *tdoa)
 {
+
+	printf("stateEstimatorUpdateWithTDOA called!\n");
   if (tdoaCount >= 100)
   {
     /**

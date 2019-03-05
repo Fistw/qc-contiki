@@ -67,7 +67,7 @@
 #define DISTANCE_VALIDITY_PERIOD (2 * 1000);
 
 // Useful constants
-static const uint8_t base_address[] = {0, 0, 0, 0, 0, 0, 0xcf, 0xbc};
+static const uint8_t base_address[] = {2, 0, 0, 0, 0, 0, 0xcf, 0xbc};
 
 // 表示本地存储的Remote anchor context信息的结构体
 typedef struct
