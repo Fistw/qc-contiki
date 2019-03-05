@@ -7,7 +7,7 @@
  *
  * Crazyflie control firmware
  *
- * Copyright (C) 2018 Bitcraze AB
+ * Copyright (C) 2011-2016 Bitcraze AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,18 +21,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  *
- * Utilities to simplify unit testing
- *
+ * sensors.h - Sensors interface
  */
+#ifndef __SENSORS_H__
+#define __SENSORS_H__
 
-#pragma once
+#include "agv_types.h"
 
-// Include "arm_math.h". This header generates some warnings, especially in
-// unit tests. We hide them to avoid noise.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wpointer-to-int-cast"
-#pragma GCC diagnostic ignored "-Wint-to-pointer-cast"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#include "mat_math.h"
-#pragma GCC diagnostic pop
+// typedef enum { ACC_MODE_PROPTEST, ACC_MODE_FLIGHT } accModes;
+
+// void sensorsInit(void);
+// bool sensorsTest(void);
+// bool sensorsAreCalibrated(void);
+
+// /**
+//  * More extensive test of the sensors
+//  */
+// bool sensorsManufacturingTest(void);
+
+// // For legacy control
+// void sensorsAcquire(sensorData_t *sensors, const uint32_t tick);
+
+// /**
+//  * This function should block and unlock at 1KhZ
+//  */
+// void sensorsWaitDataReady(void); 
+
+// Allows individual sensor measurement
+bool sensorsReadGyro(Axis3f *gyro);
+bool sensorsReadAcc(Axis3f *acc);
+
+// /**
+//  * Set acc mode, one of accModes enum
+//  */
+// void sensorsSetAccMode(accModes accMode);
+
+#endif //__SENSORS_H__

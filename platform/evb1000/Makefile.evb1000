@@ -16,21 +16,15 @@ CONTIKI_TARGET_SOURCEFILES += dw1000-arch.c
 # Other C Files
 # CONTIKI_TARGET_SOURCEFILES += deca_mutex.c deca_sleep.c deca_spi.c port.c stm32f10x_it.c syscalls.c
 
-#add dsp_lib
-#CFLAGS += -I../../dev/dw1000/tdoa/dsp_lib -DARM_MATH_CM3 -D__errno
-#LDFLAGS += -L../../dev/dw1000/tdoa/dsp_lib
-#LIBS += -larm_cortexM3b_math.lib
-
 # Decawave Driver
-CONTIKIDIRS += ../../dev/dw1000 ../../dev/dw1000/decadriver ../../dev/dw1000/tdoa ../../dev/dw1000/tdoa/tdoa_tag 
-//CONTIKIDIRS += ../../dev/dw1000/tdoa/dsp_lib
-#CONTIKIDIRS += ../../dev/dw1000/tdoa/tdoa_tag/position_estimator 
+CONTIKIDIRS += ../../dev/dw1000 ../../dev/dw1000/decadriver ../../dev/dw1000/tdoa ../../dev/dw1000/tdoa/tdoa_tag
+CONTIKIDIRS += ../../dev/dw1000/tdoa/tdoa_tag/arm_math ../../dev/dw1000/tdoa/tdoa_tag/kalmanfilter
 CONTIKI_TARGET_SOURCEFILES += deca_device.c deca_params_init.c deca_range_tables.c
 CONTIKI_TARGET_SOURCEFILES += dw1000.c dw1000-ranging.c
 CONTIKI_TARGET_SOURCEFILES += tdoa_decadriver.c uwb.c uwb_tdoa_anchor3.c
 CONTIKI_TARGET_SOURCEFILES += tdoa_tag.c tdoa_tag_engine.c tdoa_tag_storage.c clock_correction_engine.c
-CONTIKI_TARGET_SOURCEFILES += outlierFilter.c estimator_kalman.c
-CONTIKI_TARGET_SOURCEFILES += arm_mat_mult_f32.c arm_mat_trans_f32.c arm_mat_inverse_f32.c
+CONTIKI_TARGET_SOURCEFILES += arm_cos_f32.c arm_mat_inverse_f32.c arm_mat_mult_f32.c arm_mat_trans_f32.c arm_sin_f32.c
+CONTIKI_TARGET_SOURCEFILES += outlierFilter.c sensors.c estimator_kalman.c
 
 CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
 
