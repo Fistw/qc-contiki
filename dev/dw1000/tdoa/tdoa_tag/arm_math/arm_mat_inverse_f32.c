@@ -38,7 +38,7 @@
 * POSSIBILITY OF SUCH DAMAGE.    
 * -------------------------------------------------------------------- */
 
-#include "mat_math.h"
+#include "arm_math.h"
 
 /**    
  * @ingroup groupMatrix    

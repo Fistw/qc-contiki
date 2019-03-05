@@ -58,6 +58,16 @@
 #include "agv_types.h"
 
 void estimatorKalmanInit(void);
-void estimatorKalman(point_t *position, const uint32_t tick, const tdoaMeasurement_t *tdoa);
+void estimatorKalman(state_t *state, sensorData_t *sensors, const uint32_t tick, tdoaMeasurement_t *tdoa);
 
+/*
+ * Methods used in the optical flow implementation to get elevation and reset position
+ */
+float estimatorKalmanGetElevation();
+void estimatorKalmanSetShift(float deltax, float deltay);
+
+void estimatorKalmanGetEstimatedPos(point_t* pos);
+
+extern state_t state;
+extern sensorData_t sensors;
 #endif // __ESTIMATOR_KALMAN_H__

@@ -157,11 +157,10 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
 static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 {
   printf("sendTdoaToEstimatorCallback is called\n");
-  static point_t position;
-  estimatorKalman(&position, clock_time(), tdoaMeasurement);
-  printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(position.x * 1000),
-         (int)(position.y * 1000),
-         (int)(position.z * 1000));
+  estimatorKalman(&state, &sensors, clock_time(), tdoaMeasurement);
+  printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
+		  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
+											(int)(state.position.z*1000));
 
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.

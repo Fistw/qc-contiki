@@ -46,7 +46,7 @@
  * \image html MatrixTranspose.gif "Transpose of a 3 x 3 matrix"    
  */
 
-#include "mat_math.h"
+#include "arm_math.h"
 
 /**    
  * @ingroup groupMatrix    
