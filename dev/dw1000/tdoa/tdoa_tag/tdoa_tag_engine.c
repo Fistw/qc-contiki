@@ -58,9 +58,8 @@ static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorC
 
         uint8_t idA = tdoaStorageGetId(anchorACtx);
         uint8_t idB = tdoaStorageGetId(anchorBCtx);
-        int diff1 = distanceDiff;
-        int diff2 = (distanceDiff - diff1) * 1e9;
-        printf("get the distance diff from  %d  and  %d  :::  %d.%09d\n", idA, idB, diff1, diff2);
+        printf("get the distance diff from  %d  and  %d  :::  %lf\n", idA, idB, distanceDiff);
+
         // if (idA == stats->anchorId && idB == stats->remoteAnchorId)
         // {
         //     stats->tdoa = distanceDiff;

@@ -4,8 +4,8 @@
 #define CLOCK_CORRECTION_SPEC_MIN (1.0 - MAX_CLOCK_DEVIATION_SPEC * 2)
 #define CLOCK_CORRECTION_SPEC_MAX (1.0 + MAX_CLOCK_DEVIATION_SPEC * 2)
 
-//#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
-#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.3
+#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
+//#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.3
 #define CLOCK_CORRECTION_FILTER 0.1
 #define CLOCK_CORRECTION_BUCKET_MAX 4
 
@@ -100,18 +100,10 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
   bool sampleIsReliable = false;
 
   const double currentClockCorrection = storage->clockCorrection;
-
-  uint64_t test11 = (uint64_t)currentClockCorrection;
-    	  uint64_t test12 = (currentClockCorrection - test11)*1000000000000000;
-    	  printf("currrent clock_correction: %llu.%llu \n", test11, test12);
+  printf("storage clock_correction: %lf \n", currentClockCorrection);
+  printf("new_clock_correction: %lf \n", clockCorrectionCandidate);
 
   const double difference = clockCorrectionCandidate - currentClockCorrection;
-
-  if (difference < 2.0) {
-  	  uint64_t test1 = (uint64_t)difference;
-  	  uint64_t test2 = (difference - test1)*1000000000000000;
-  	  printf("clock_correction diff: %llu.%llu \n", test1, test2);
-    }
 
 #ifdef CLOCK_CORRECTION_ENABLE_LOGGING
   logMinAcceptedNoiseLimit = scaleValueForLogging(currentClockCorrection - CLOCK_CORRECTION_ACCEPTED_NOISE);
@@ -123,7 +115,7 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
 #endif
 
   if (-CLOCK_CORRECTION_ACCEPTED_NOISE < difference && difference < CLOCK_CORRECTION_ACCEPTED_NOISE) {
-    // Simple low pass filter
+	// Simple low pass filter
     const double newClockCorrection = currentClockCorrection * CLOCK_CORRECTION_FILTER + clockCorrectionCandidate * (1.0 - CLOCK_CORRECTION_FILTER);
 
     sampleIsReliable = true;
@@ -132,16 +124,10 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
   } else {
     const bool shouldAcceptANewClockReference = emptyClockCorrectionBucket(storage);
     if (shouldAcceptANewClockReference) {
-    	if (0.0 < clockCorrectionCandidate && clockCorrectionCandidate < 2.0) {
-    	        // We do not fill the bucket and accept the clock correction sample as reliable: a sample is reliable when it is in the accepted noise level (which means that we already have two or more samples that are similar) and has been LP filtered. See: https://github.com/bitcraze/crazyflie-firmware/pull/328
-    	        storage->clockCorrection = clockCorrectionCandidate;
-    	        printf("storage clock correction !\n");
-    }
-
-//      if (CLOCK_CORRECTION_SPEC_MIN < clockCorrectionCandidate && clockCorrectionCandidate < CLOCK_CORRECTION_SPEC_MAX) {
-//        // We do not fill the bucket and accept the clock correction sample as reliable: a sample is reliable when it is in the accepted noise level (which means that we already have two or more samples that are similar) and has been LP filtered. See: https://github.com/bitcraze/crazyflie-firmware/pull/328
-//        storage->clockCorrection = clockCorrectionCandidate;
-////      }
+      if (CLOCK_CORRECTION_SPEC_MIN < clockCorrectionCandidate && clockCorrectionCandidate < CLOCK_CORRECTION_SPEC_MAX) {
+        // We do not fill the bucket and accept the clock correction sample as reliable: a sample is reliable when it is in the accepted noise level (which means that we already have two or more samples that are similar) and has been LP filtered. See: https://github.com/bitcraze/crazyflie-firmware/pull/328
+        storage->clockCorrection = clockCorrectionCandidate;
+      }
     }
   }
 
