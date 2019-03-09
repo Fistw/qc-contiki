@@ -20,6 +20,9 @@
 #include "contiki.h"
 #include "estimator_kalman.h"
 
+#include "fang.h"
+
+static point_t tagCrd;
 static tdoaEngineState_t engineState;
 
 static bool isValidTimeStamp(const int64_t anchorRxTime)
@@ -157,11 +160,22 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
 static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 {
   printf("sendTdoaToEstimatorCallback is called\n");
-  estimatorKalman(&state, &sensors, clock_time(), tdoaMeasurement);
-  printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
-		  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
-											(int)(state.position.z*1000));
-
+  // estimatorKalman(&state, &sensors, clock_time(), tdoaMeasurement);
+  // printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
+	// 	  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
+	// 										(int)(state.position.z*1000));
+  tdoaMeasurement_t* measureB, measureA = tdoaMeasurement;
+  measureB = fangGetPutTdoaMeasurement(queue, measureA);
+  if(measureB){
+    fangPutMatrix(measureA, measureB, (float*)A, (float*)b);
+    if(flag == 3){
+      if(calcTagCoordinate(&Am, (float*)b, &tagCrd))
+        printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+      else
+        printf("arm_matrix_inverse_f32 execute error.\n");
+      flag = 0;
+    }
+  }
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.
   // LPS_2D_POSITION_HEIGHT contains the height (Z) that the tag will be located at

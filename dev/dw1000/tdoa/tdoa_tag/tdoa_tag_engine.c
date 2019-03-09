@@ -25,6 +25,8 @@ The implementation must handle
 
 #include "tdoa_tag_engine.h"
 
+#include "agv_types.h"
+
 #define SPEED_OF_LIGHT 299792458.0
 #define UWB_TS_FREQ (499.2e6 * 128)
 
@@ -46,30 +48,53 @@ static uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
 
 static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, const double distanceDiff, tdoaEngineState_t *engineState)
 {
-    // tdoaStats_t *stats = &engineState->stats;
-
-    tdoaMeasurement_t tdoa = {tdoa.stdDev = MEASUREMENT_NOISE_STD,
-    						  tdoa.distanceDiff = distanceDiff};
-
-    if (tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
+    static tdoaMeasurement_t tdoa;
+    point_t posA, posB;
+    if(tdoaStorageGetAnchorPosition(anchorACtx, &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
     {
-        // stats->packetsToEstimator++;
-        engineState->sendTdoaToEstimator(&tdoa);
-
         uint8_t idA = tdoaStorageGetId(anchorACtx);
         uint8_t idB = tdoaStorageGetId(anchorBCtx);
-        int diff1 = distanceDiff;
-        int diff2 = (distanceDiff - diff1) * 1e9;
-        printf("get the distance diff from  %d  and  %d  :::  %d.%09d\n", idA, idB, diff1, diff2);
-        // if (idA == stats->anchorId && idB == stats->remoteAnchorId)
-        // {
-        //     stats->tdoa = distanceDiff;
-        // }
-        // if (idB == stats->anchorId && idA == stats->remoteAnchorId)
-        // {
-        //     stats->tdoa = -distanceDiff;
-        // }
+        if(idA < idB){   
+            tdoa.idA = idA;
+            tdoa.idB = idB;
+            tdoa.anchorPosition[0] = posA;
+            tdoa.anchorPosition[1] = posB;
+            tdoa.distanceDiff = -distanceDiff;
+        }else{
+            tdoa.idA = idB;
+            tdoa.idB = idA;
+            tdoa.anchorPosition[0] = posB;
+            tdoa.anchorPosition[1] = posA;
+            tdoa.distanceDiff = distanceDiff;
+        }
+        tdoa.endOfLife = clock_time() + TDOA_EXPIRED;
+        engineState->sendTdoaToEstimator(&tdoa);
+        printf("get the distance diff from  %d  and  %d  :::  %lf\n", idA, idB, distanceDiff);
     }
+    // tdoaStats_t *stats = &engineState->stats;
+
+    // tdoaMeasurement_t tdoa = {tdoa.stdDev = MEASUREMENT_NOISE_STD,
+    // 						  tdoa.distanceDiff = distanceDiff};
+    // if (tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
+    // {
+    //     // stats->packetsToEstimator++;
+    //     engineState->sendTdoaToEstimator(&tdoa);
+
+    //     uint8_t idA = tdoaStorageGetId(anchorACtx);
+    //     uint8_t idB = tdoaStorageGetId(anchorBCtx);
+
+    //     int diff1 = distanceDiff;
+    //     int diff2 = (distanceDiff - diff1) * 1e9;
+    //     printf("get the distance diff from  %d  and  %d  :::  %d.%09d\n", idA, idB, diff1, diff2);
+    //     // if (idA == stats->anchorId && idB == stats->remoteAnchorId)
+    //     // {
+    //     //     stats->tdoa = distanceDiff;
+    //     // }
+    //     // if (idB == stats->anchorId && idA == stats->remoteAnchorId)
+    //     // {
+    //     //     stats->tdoa = -distanceDiff;
+    //     // }
+    // }
 }
 
 static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
