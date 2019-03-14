@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "uwb.h"
 #include "mac.h"
@@ -547,21 +548,34 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     }
 }
 
+void diagnostics()
+{
+	dwt_rxdiag_t diag;
+	dwt_readdiagnostics(&diag);
+
+	int32_t CIR = diag.maxGrowthCIR;
+	double RxLevel = 10 * log10((CIR << 17) * 1.0 / (diag.rxPreamCount * diag.rxPreamCount)) - 121.74;
+	double FPLevel = 10 * log10((diag.firstPathAmp1 * diag.firstPathAmp1 + diag.firstPathAmp2 * diag.firstPathAmp2 + diag.firstPathAmp3 * diag.firstPathAmp3) * 1.0
+			/(diag.rxPreamCount * diag.rxPreamCount)) - 121.74;
+	int i1 = RxLevel;
+	int i2 = FPLevel;
+	printf("FPLevel: %d\n", i2);
+	printf("RxLevel: %d\n", i1);
+}
+
 void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t regTxTime)
 {
     static packet_t rxPacket;
     uint8_t *prxPacket = &rxPacket;
     int dataLength = data_len;
+
+    diagnostics();
+
     for (int i = 0; i < data_len; i++)
     {
-    	//printf("%d ", packetbuf[i]);
         prxPacket[i] = packetbuf[i];
     }
-    //printf("\n");
-    //   dwTime_t rxTime = { .full = 0 };
 
-    //   dwGetRawReceiveTimestamp(dev, &rxTime);
-    // dwCorrectTimestamp(dev, &rxTime); //api
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
     {
     	printf("Not a TDOA3 Packet.\n");

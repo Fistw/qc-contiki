@@ -216,7 +216,7 @@ tx_conf_cb(const dwt_cb_data_t *cb_data)
 	printf("tx_conf_cb is called.\n");
 	dwt_readtxtimestamp(regTxTime.raw);
 	//printf("regTxTime: %u\n", regTxTime.low32);
-	//printf("%d\n", cb_data->status);
+	printf("end: %d\n", clock_time());
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
 
@@ -231,7 +231,7 @@ tx_conf_cb(const dwt_cb_data_t *cb_data)
 }
 /*---------------------------------------------------------------------------*/
 
-int dw1000_configure(dwt_config_t *cfg)
+int dw1000_configure(dwt_config_t *cfg, dwt_txconfig_t *txcfg)
 {
 
     int8_t irq_status = dw1000_disable_interrupt();
@@ -243,23 +243,28 @@ int dw1000_configure(dwt_config_t *cfg)
 
     /* Configure DW1000 */
     dwt_configure(cfg);
+    dwt_setsmarttxpower(0);
+    dwt_configuretxrf(txcfg);
 #if DW1000_RANGING_ENABLED
     dw1000_range_reconfigure(cfg); /* TODO: check the returned status */
 #endif
 
     dw1000_on();
 
-#if DEBUG == 1
-    PRINTF("DW1000 Radio Configuration: \n");
-    PRINTF("\t Channel: %u\n", DW1000_CHANNEL);
-    PRINTF("\t PRF: %u\n", DW1000_PRF);
-    PRINTF("\t PLEN: %u\n", DW1000_PLEN);
-    PRINTF("\t PAC Size: %u\n", DW1000_PAC);
-    PRINTF("\t Preamble Code: %u\n", DW1000_PREAMBLE_CODE);
-    PRINTF("\t SFD: %u\n", DW1000_SFD_MODE);
-    PRINTF("\t Data Rate: %u\n", DW1000_DATA_RATE);
-    PRINTF("\t PHR Mode: %u\n", DW1000_PHR_MODE);
-    PRINTF("\t SFD Timeout: %u\n", DW1000_SFD_TIMEOUT);
+//#if DEBUG == 1
+#if 1
+    printf("DW1000 Radio Configuration: \n");
+    printf("\t Channel: %u\n", cfg->chan);
+    printf("\t PRF: %u\n", cfg->prf);
+    printf("\t PLEN: %u\n", cfg->txPreambLength);
+    printf("\t PAC Size: %u\n", cfg->rxPAC);
+    printf("\t Preamble Code: %u\n", cfg->rxCode);
+    printf("\t SFD: %u\n", cfg->nsSFD);
+    printf("\t Data Rate: %u\n", cfg->dataRate);
+    printf("\t PHR Mode: %u\n", cfg->phrMode);
+    printf("\t SFD Timeout: %u\n", cfg->nsSFD);
+
+    printf("\t TX Power : %u\n", txcfg->power);
 #endif
     return 1;
 }
@@ -299,18 +304,18 @@ dw1000_init(void)
 #endif
 
     /* Set the configuration values */
-    default_cfg.chan = DW1000_CHANNEL;
-    default_cfg.prf = DW1000_PRF;
-    default_cfg.txPreambLength = DW1000_PLEN;
-    default_cfg.rxPAC = DW1000_PAC;
-    default_cfg.txCode = DW1000_PREAMBLE_CODE;
-    default_cfg.rxCode = DW1000_PREAMBLE_CODE;
-    default_cfg.nsSFD = DW1000_SFD_MODE;
-    default_cfg.dataRate = DW1000_DATA_RATE;
-    default_cfg.phrMode = DW1000_PHR_MODE;
-    default_cfg.sfdTO = DW1000_SFD_TIMEOUT;
-
-    dw1000_configure(&default_cfg);
+//    default_cfg.chan = DW1000_CHANNEL;
+//    default_cfg.prf = DW1000_PRF;
+//    default_cfg.txPreambLength = DW1000_PLEN;
+//    default_cfg.rxPAC = DW1000_PAC;
+//    default_cfg.txCode = DW1000_PREAMBLE_CODE;
+//    default_cfg.rxCode = DW1000_PREAMBLE_CODE;
+//    default_cfg.nsSFD = DW1000_SFD_MODE;
+//    default_cfg.dataRate = DW1000_DATA_RATE;
+//    default_cfg.phrMode = DW1000_PHR_MODE;
+//    default_cfg.sfdTO = DW1000_SFD_TIMEOUT;
+//
+//    dw1000_configure(&default_cfg);
 
     dw1000_on();
 

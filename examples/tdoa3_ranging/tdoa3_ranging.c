@@ -6,16 +6,21 @@
 #include "tdoa/uwb.h"
 
 dwt_config_t radio_config = {
-    .chan = 5,
-    .prf = DWT_PRF_16M,
+    .chan = 2,
+    .prf = DWT_PRF_64M,
     .txPreambLength = DWT_PLEN_128,
     .dataRate = DWT_BR_6M8,
-    .txCode = 7,
-    .rxCode = 7,
+    .txCode = 9,
+    .rxCode = 9,
     .rxPAC = DWT_PAC8,
     .nsSFD = 0 /* standard */,
     .phrMode = DWT_PHRMODE_STD,
     .sfdTO = (129 + 8 - 8),
+};
+
+dwt_txconfig_t txcfg = {
+		0xC2,
+		0xC0C0C0C0,
 };
 
 PROCESS(toda3_ranging, "Tdoa3 ranging");
@@ -29,18 +34,19 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     static uint32_t timeout = 30;
     static struct etimer et;
     PROCESS_BEGIN();
-    dw1000_configure(&radio_config);
+    dw1000_configure(&radio_config, &txcfg);
     printf("Process begin\n");
     uwbConfig = uwbGetConfig();
     tdoa3Init(uwbConfig);
-    timeout_ms = tdoa3UwbEvent(dev);
+    timeout_ms = 1000;
     while (1)
     {
         etimer_set(&et, timeout);
         PROCESS_YIELD_UNTIL(etimer_expired(&et));
         printf("start: %d\n", clock_time());
-        printf("timeout_ms: %u\n", timeout_ms);
-        timeout_ms = tdoa3UwbEvent(dev);
+//        printf("timeout_ms: %u\n", timeout_ms);
+//        timeout_ms = tdoa3UwbEvent(dev);
+        tdoa3UwbEvent(dev);
         printf("end: %d\n", clock_time());
     }
     PROCESS_END();

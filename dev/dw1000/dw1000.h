@@ -63,7 +63,7 @@
  *
  */
 
-#define TDOA_DEV_TAG 1
+#define TDOA_DEV_TAG 0
 
 #ifdef DW1000_CONF_COMPENSATE_BIAS
 #define DW1000_COMPENSATE_BIAS DW1000_CONF_COMPENSATE_BIAS
@@ -183,6 +183,6 @@ typedef enum
 
 bool range_with(linkaddr_t *dst, dw1000_rng_type_t type);
 
-int dw1000_configure(dwt_config_t *cfg);
+int dw1000_configure(dwt_config_t *cfg, dwt_txconfig_t *txcfg);
 
 #endif /* DW1000_H */
