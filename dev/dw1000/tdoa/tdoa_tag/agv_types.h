@@ -93,17 +93,19 @@ typedef struct quaternion_s {
 //   float stdDev;
 // } tdoaMeasurement_t;
 
-#define TDOA_EXPIRED 1000
-#define TDOA_QUEUE_LENTH 120
+#define TDOA_EXPIRED 5000
+#define TDOA_QUEUE_LENTH 28
+#define TDOA_ANCHOR_COUNT 8
 typedef struct tdoaMeasurement_s {
   point_t anchorPosition[2];
   float distanceDiff;
   uint8_t idA;
   uint8_t idB;
+  uint8_t used;
   uint32_t endOfLife;
 } tdoaMeasurement_t;//默认idA小于idB
 
-typedef tdoaMeasurement_t* tdoaQueue_t[TDOA_QUEUE_LENTH];//理论上最多16个基站间的TDOA数据量为120.
+typedef tdoaMeasurement_t tdoaQueue_t[TDOA_QUEUE_LENTH];//理论上最多16个基站间的TDOA数据量为120.
 
 typedef struct sensorData_s {
   Axis3f acc;               // Gs

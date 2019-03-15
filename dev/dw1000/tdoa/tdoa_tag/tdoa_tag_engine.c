@@ -48,28 +48,18 @@ static uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
 
 static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, const double distanceDiff, tdoaEngineState_t *engineState)
 {
-    static tdoaMeasurement_t tdoa;
-    point_t posA, posB;
-    if(tdoaStorageGetAnchorPosition(anchorACtx, &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
+    tdoaMeasurement_t tdoa;
+    if(tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
     {
         uint8_t idA = tdoaStorageGetId(anchorACtx);
         uint8_t idB = tdoaStorageGetId(anchorBCtx);
-        if(idA < idB){   
-            tdoa.idA = idA;
-            tdoa.idB = idB;
-            tdoa.anchorPosition[0] = posA;
-            tdoa.anchorPosition[1] = posB;
-            tdoa.distanceDiff = -distanceDiff;
-        }else{
-            tdoa.idA = idB;
-            tdoa.idB = idA;
-            tdoa.anchorPosition[0] = posB;
-            tdoa.anchorPosition[1] = posA;
-            tdoa.distanceDiff = distanceDiff;
-        }
+        tdoa.idA = idA;
+        tdoa.idB = idB;
+        tdoa.distanceDiff = distanceDiff;
         tdoa.endOfLife = clock_time() + TDOA_EXPIRED;
-        engineState->sendTdoaToEstimator(&tdoa);
+        
         printf("get the distance diff from  %d  and  %d  :::  %lf\n", idA, idB, distanceDiff);
+        engineState->sendTdoaToEstimator(&tdoa);
     }
     // tdoaStats_t *stats = &engineState->stats;
 

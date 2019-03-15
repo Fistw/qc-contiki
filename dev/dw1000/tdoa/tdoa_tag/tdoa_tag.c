@@ -164,17 +164,15 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
   // printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
 	// 	  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
 	// 										(int)(state.position.z*1000));
-  tdoaMeasurement_t* measureB, measureA = tdoaMeasurement;
-  measureB = fangGetPutTdoaMeasurement(queue, measureA);
-  if(measureB){
-    fangPutMatrix(measureA, measureB, (float*)A, (float*)b);
-    if(flag == 3){
-      if(calcTagCoordinate(&Am, (float*)b, &tagCrd))
-        printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-      else
-        printf("arm_matrix_inverse_f32 execute error.\n");
-      flag = 0;
-    }
+  tdoaMeasurement_t* measureA = tdoaMeasurement;
+  int idx;
+  idx = fangPutTdoaMeasurementToQueue(queue, measureA);
+  if(idx != -1){
+    fangPutMatrix(queue, idx);
+    if(calcTagCoordinate(&Am, (float*)b, &tagCrd))
+      printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+    else
+      printf("arm_matrix_inverse_f32 execute error.\n");
   }
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.
