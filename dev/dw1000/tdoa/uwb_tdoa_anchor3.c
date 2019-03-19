@@ -326,16 +326,16 @@ static void updateAnchorLists()
     // SYSTEM_TX_FREQ 400.0
     // ANCHOR_MAX_TX_FREQ 50.0
     // ANCHOR_MIN_TX_FREQ 20.0
-//    float freq = SYSTEM_TX_FREQ / (availableCount + 1);
-//    if (freq > ANCHOR_MAX_TX_FREQ)
-//    {
-//        freq = ANCHOR_MAX_TX_FREQ;
-//    }
-//    if (freq < ANCHOR_MIN_TX_FREQ)
-//    {
-//        freq = ANCHOR_MIN_TX_FREQ;
-//    }
-//    ctx.averageTxDelay = 1000.0 / freq;
+   float freq = SYSTEM_TX_FREQ / (availableCount + 1);
+   if (freq > ANCHOR_MAX_TX_FREQ)
+   {
+       freq = ANCHOR_MAX_TX_FREQ;
+   }
+   if (freq < ANCHOR_MIN_TX_FREQ)
+   {
+       freq = ANCHOR_MIN_TX_FREQ;
+   }
+   ctx.averageTxDelay = 1000.0 / freq;
 
     purgeData();
 }

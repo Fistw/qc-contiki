@@ -166,14 +166,31 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 	// 										(int)(state.position.z*1000));
   tdoaMeasurement_t* measureA = tdoaMeasurement;
   int idx;
-  idx = fangPutTdoaMeasurementToQueue(queue, measureA);
-  if(idx != -1){
-    fangPutMatrix(queue, idx);
-    if(calcTagCoordinate(&Am, (float*)b, &tagCrd))
-      printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-    else
-      printf("arm_matrix_inverse_f32 execute error.\n");
+  if(filterTdoaMeasurement(measureA)){
+      idx = fangPutTdoaMeasurement(measureA);
+      if(idx != -1){
+        fangGetTdoaMeasurement(idx);
+        if(getAnchorDistances(engineState.anchorInfoArray)){
+          createInnerAxis();
+          calcTagInnerCoodinate();
+          changeAxisFromInnerToOuter(&tagCrd);
+          printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+        }else{
+          printf("Debug: can't get enough distance.\n");
+        }
+      }else{
+        printf("Debug: the idx is -1.\n");
+      }
+  }else{
+    printf("Debug: the todaMeasurement is filtered.\n");
   }
+  // if(idx != -1){
+  //   fangPutMatrix(queue, idx);
+  //   if(calcTagCoordinate(&Am, (float*)b, &tagCrd))
+  //     printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+  //   else
+  //     printf("arm_matrix_inverse_f32 execute error.\n");
+  // }
 #ifdef LPS_2D_POSITION_HEIGHT
   // If LPS_2D_POSITION_HEIGHT is defined we assume that we are doing 2D positioning.
   // LPS_2D_POSITION_HEIGHT contains the height (Z) that the tag will be located at

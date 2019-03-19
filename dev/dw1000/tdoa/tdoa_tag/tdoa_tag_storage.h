@@ -74,6 +74,7 @@ void tdoaStorageGetRemoteSeqNrList(const tdoaAnchorContext_t* anchorCtx, int* re
 int64_t tdoaStorageGetTimeOfFlight(const tdoaAnchorContext_t* anchorCtx, const uint8_t otherAnchor);
 void tdoaStorageSetTimeOfFlight(tdoaAnchorContext_t* anchorCtx, const uint8_t remoteAnchor, const int64_t tof);
 
+void setAnchorPosition(point_t* src, point_t* dst);
 // Mainly for test
 // bool tdoaStorageIsAnchorInStorage(tdoaAnchorInfo_t anchorStorage[], const uint8_t anchor);
 

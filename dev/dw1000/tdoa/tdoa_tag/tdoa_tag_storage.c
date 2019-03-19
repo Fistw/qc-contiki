@@ -280,3 +280,10 @@ void tdoaStorageSetTimeOfFlight(tdoaAnchorContext_t *anchorCtx, const uint8_t re
     anchorInfo->tof[indexToUpdate].tof = tof;
     anchorInfo->tof[indexToUpdate].endOfLife = now + TOF_VALIDITY_PERIOD;
 }
+
+void setAnchorPosition(point_t* src, point_t* dst)
+{
+    dst->x = src->x;
+    dst->y = src->y;
+    dst->z = src->z;
+}

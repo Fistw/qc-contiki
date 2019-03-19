@@ -4,15 +4,33 @@
 #include "agv_types.h"
 #include "arm_math"
 
-extern tdoaQueue_t queue;
-
-extern float A[3][3];
-extern arm_matrix_instance_f32 Am = {3, 3, (float*)A};
-
-float b[3];
-
-int fangPutTdoaMeasurementToQueue(tdoaMeasurement_t* pQueue, tdoaMeasurement_t* measure);
-void fangPutMatrix(tdoaMeasurement_t* pQueue, int idx);
-bool calcTagCoordinate(arm_matrix_instance_f32* Am, float* b, point_t* tagCrd)
+/*
+ * 过滤不正常tdoa数据。
+ */
+bool filterTdoaMeasurement(tdoaMeasurement_t* m);
+/*
+ * 将收到的tdoaMeasurement数据放入数组，更新标签从相应基站收包数。
+ */
+int fangPutTdoaMeasurement(tdoaMeasurement_t* measure);
+/*
+ * 从队列中取出三个TDOA数据，一个主基站，三个从基站。
+ */
+void fangGetTdoaMeasurement(int idx);
+/*
+ * 获取基站测距。
+ */
+bool getAnchorDistances(tdoaAnchorInfo_t anchorStorage[]);
+/*
+ * 建立内坐标轴。
+ */
+void createInnerAxis();
+/*
+ * 计算标签在内坐标轴下的坐标。
+ */
+void calcTagInnerCoodinate();
+/*
+ * 坐标轴转换（内坐标轴转换为外坐标轴）。
+ */
+void changeAxisFromInnerToOuter(point_t* pTagCrd);
 
 #endif

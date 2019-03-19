@@ -49,17 +49,33 @@ static uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
 static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, const double distanceDiff, tdoaEngineState_t *engineState)
 {
     tdoaMeasurement_t tdoa;
-    if(tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
+    point_t posA, posB;
+    if (tdoaStorageGetAnchorPosition(anchorACtx, &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
     {
         uint8_t idA = tdoaStorageGetId(anchorACtx);
         uint8_t idB = tdoaStorageGetId(anchorBCtx);
-        tdoa.idA = idA;
-        tdoa.idB = idB;
-        tdoa.distanceDiff = distanceDiff;
+        if (idA < idB)
+        {
+            tdoa.idA = idA;
+            tdoa.idB = idB;
+            setAnchorPosition(&posA, &tdoa.anchorPosition[0]);
+            setAnchorPosition(&posB, &tdoa.anchorPosition[1]);
+            tdoa.distanceDiff = -distanceDiff;
+        }
+        else
+        {
+            tdoa.idA = idB;
+            tdoa.idB = idA;
+            setAnchorPosition(&posB, &tdoa.anchorPosition[0]);
+            setAnchorPosition(&posA, &tdoa.anchorPosition[1]);
+            tdoa.distanceDiff = distanceDiff;
+        }
+        int64_t tof = tdoaStorageGetTimeOfFlight(anchorACtx, idB);
+        tdoa.distance = SPEED_OF_LIGHT * tof / UWB_TS_FREQ;
         tdoa.endOfLife = clock_time() + TDOA_EXPIRED;
-        
-        printf("get the distance diff from  %d  and  %d  :::  %lf\n", idA, idB, distanceDiff);
+
         engineState->sendTdoaToEstimator(&tdoa);
+        printf("get the distance diff from  %d  and  %d  :::  %lf\n", idA, idB, distanceDiff);
     }
     // tdoaStats_t *stats = &engineState->stats;
 
@@ -192,12 +208,12 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
     if (timeIsGood)
     {
         // engineState->stats.timeIsGood++;
-    	printf("TimeIsGood\n");
+        printf("TimeIsGood\n");
         tdoaAnchorContext_t otherAnchorCtx;
         if (findSuitableAnchor(engineState, &otherAnchorCtx, anchorCtx))
         {
             printf("found suitable anchor\n");
-        	// engineState->stats.suitableDataFound++;
+            // engineState->stats.suitableDataFound++;
             // 计算距离差
             double tdoaDistDiff = calcDistanceDiff(&otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
             // 根据新的tdoa数据更新位置
