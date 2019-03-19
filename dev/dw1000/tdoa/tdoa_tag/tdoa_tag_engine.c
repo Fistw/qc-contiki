@@ -27,9 +27,6 @@ The implementation must handle
 
 #include "agv_types.h"
 
-#define SPEED_OF_LIGHT 299792458.0
-#define UWB_TS_FREQ (499.2e6 * 128)
-
 #define MEASUREMENT_NOISE_STD 0.15f
 
 void tdoaEngineInit(tdoaEngineState_t *engineState, const uint32_t now_ms, tdoaEngineSendTdoaToEstimator sendTdoaToEstimator)

@@ -27,7 +27,7 @@ typedef struct {
   uint32_t lastUpdateTime; // The time when this anchor was updated the last time
   uint8_t id; // Anchor id
 
-  int64_t txTime; // Transmit time of last packet, in remote DWM clock
+  int64_t txTime; // Transmit time of last packet, in reetAnchorPosition(point_t* src, point_t* dst);mote DWM clock
   int64_t rxTime; // Receive time of last packet, in local DWM clock
   uint8_t seqNr; // Sequence nr of last packet (7 bits)
 

@@ -29,8 +29,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "tdoa_tag_storage.h"
-
  typedef union {
    struct {
          float x;

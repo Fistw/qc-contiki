@@ -138,8 +138,8 @@ SECTIONS
   /* Remove standard libraries temporary data */
   /DISCARD/ :
   {
-    libc.a ( * )
     libm.a ( * )
+    libc.a ( * )
     libgcc.a ( * )
   }
 

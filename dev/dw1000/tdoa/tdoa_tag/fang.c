@@ -1,5 +1,5 @@
 #include "fang.h"
-#include "tdoa_tag_storage.h"
+#include <math.h>
 
 static tdoaQueue_t queue;
 
@@ -28,7 +28,7 @@ static void createVector(point_t* pstart, point_t* pend, point_t* vector);
  */
 bool filterTdoaMeasurement(tdoaMeasurement_t* m)
 {
-    return (m.distance > m.distanceDiff);
+    return (m->distance > m->distanceDiff);
 }
 
 /*
@@ -120,11 +120,11 @@ void fangGetTdoaMeasurement(int idx)
  */
 bool getAnchorDistances(tdoaAnchorInfo_t anchorStorage[])
 {
-    const uint8_t id2, id3, id4;
+    uint8_t id2, id3, id4;
     tdoaAnchorContext_t t2, t3;
     uint32_t nowms = clock_time();
     int64_t tof23, tof24, tof34;
-    float D23, D24, D14, D23, D24, D34;
+    float D12, D13, D14, D23, D24, D34;
     
     id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
     
@@ -134,12 +134,12 @@ bool getAnchorDistances(tdoaAnchorInfo_t anchorStorage[])
         tof24 = tdoaStorageGetTimeOfFlight(&t2, id4);
         tof34 = tdoaStorageGetTimeOfFlight(&t3, id4);
 
-        D23 = tdoaTriad[0].distance, D24 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance; 
+        D12 = tdoaTriad[0].distance, D13 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance;
         D23 = SPEED_OF_LIGHT * tof23 / UWB_TS_FREQ;
         D24 = SPEED_OF_LIGHT * tof24 / UWB_TS_FREQ;
         D34 = SPEED_OF_LIGHT * tof34 / UWB_TS_FREQ;
 
-        distances[0][0] = D23, distances[0][1] = D24, distance[0][2] = D14;
+        distances[0][0] = D23, distances[0][1] = D24, distances[0][2] = D14;
         distances[1][1] = D23,distances[1][2] = D24;
         distances[2][2] = D34;
 
@@ -157,10 +157,10 @@ void createInnerAxis()
     float *x3 = &innerAxisQuad[2].x, *y3 = &innerAxisQuad[2].y;
     float *x4 = &innerAxisQuad[3].x, *y4 = &innerAxisQuad[3].y, *z4 = &innerAxisQuad[3].z;
     
-    const float D12, D13, D14, D23, D24, D34;
-    D12 = distance[0][0],D13 = distance[0][1],D14 = distance[0][2];
-    D23 = distance[1][1],D24 = distance[1][2];
-    D34 = distance[2][2];
+    float D12, D13, D14, D23, D24, D34;
+    D12 = distances[0][0],D13 = distances[0][1],D14 = distances[0][2];
+    D23 = distances[1][1],D24 = distances[1][2];
+    D34 = distances[2][2];
 
     const float pD12 = powf(D12,2), pD13 = powf(D13,2), pD14 = powf(D14,2);
 
@@ -168,8 +168,7 @@ void createInnerAxis()
     *x3 = (powf(D23,2)-pD13-pD12) / (-2*D12);
     *y3 = sqrtf(pD13 - powf(*x3, 2));
     *x4 = (powf(D24,2)-pD14-pD12) / (-2*D12);
-    *y4 = (-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)+powf(*y3,2)-pD12-powf(D34,2)+powf(D24,2))
-                / (2*(*y3)+1);
+    *y4 = ((-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)+powf(*y3,2)-pD12-powf(D34,2)+powf(D24,2)) / (2*(*y3)+1);
     *z4 = sqrtf(pD14 - powf(*x4,2) - powf(*y4,2));
     
     //判断从基站4的z轴坐标正负性。
@@ -181,12 +180,7 @@ void createInnerAxis()
  */
 void calcTagInnerCoodinate()
 {
-    const float D12, D13, D14, D23, D24, D34;
-    D12 = distance[0][0],D13 = distance[0][1],D14 = distance[0][2];
-    D23 = distance[1][1],D24 = distance[1][2];
-    D34 = distance[2][2];
-    
-    const float R21, R31, R41;
+    float R21, R31, R41;
     R21 = tdoaTriad[0].distanceDiff;
     R31 = tdoaTriad[1].distanceDiff;
     R41 = tdoaTriad[2].distanceDiff;
@@ -211,13 +205,13 @@ void calcTagInnerCoodinate()
 
     d = 4*pR21*(1+powf(g,2)+powf(k,2))-4*px2;
     e = 8*pR21*(g*h+l*k)-4*x2*(pR21-px2);
-    f = 4*pR21*(powf(h,2)+powf(l,2))-powf(pR21-px2,2)
+    f = 4*pR21*(powf(h,2)+powf(l,2))-powf(pR21-px2,2);
 
     float *x, *y, *z, tmp1,tmp2;
-    tmp1 = (-e+sqrtf(powf(powf(e,2)-4*d*f)))/(2*d);
-    tmp2 = (-e-sqrtf(powf(powf(e,2)-4*d*f)))/(2*d);
+    tmp1 = (-e+sqrtf(powf(e,2)-4*d*f))/(2*d);
+    tmp2 = (-e-sqrtf(powf(e,2)-4*d*f))/(2*d);
     x = &innerAxisQuad[4].x, y = &innerAxisQuad[4].y, z = &innerAxisQuad[4].z;
-    *x = getMinXAxis() <= tmp1 <= getMaxXAxis() ? tmp1 : tmp2;
+    *x = (getMinXAxis() <= tmp1 && tmp1 <= getMaxXAxis()) ? tmp1 : tmp2;
     *y = g*(*x)+h;
     *z = k*(*x)+l;
 }
@@ -277,13 +271,13 @@ static int createAnchorIdIndex(uint8_t id)
 
 static void createTdoaMeasurement(tdoaMeasurement_t* src, tdoaMeasurement_t* dst)
 {
-    setAnchorPosition(&src.anchorPosition[0], &dst.anchorPosition[0]);
-    setAnchorPosition(&src.anchorPosition[1], &dst.anchorPosition[1]);
-    dst.distanceDiff = src.distanceDiff;
-    dst.distance = src.distance;
-    dst.idA = src.idA;
-    dst.idB = src.idB;
-    dst.endOfLife = src.endOfLife;
+    setAnchorPosition(&src->anchorPosition[0], &dst->anchorPosition[0]);
+    setAnchorPosition(&src->anchorPosition[1], &dst->anchorPosition[1]);
+    dst->distanceDiff = src->distanceDiff;
+    dst->distance = src->distance;
+    dst->idA = src->idA;
+    dst->idB = src->idB;
+    dst->endOfLife = src->endOfLife;
 }
 
 static void inverseTdoaMeasurement(tdoaMeasurement_t* t)
