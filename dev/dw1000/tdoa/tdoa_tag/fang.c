@@ -36,25 +36,23 @@ bool filterTdoaMeasurement(tdoaMeasurement_t* m)
  */
 int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
 { 
-    int sameSlot = -1, firstEmptySlot = -1, expiredSlot = 0;
+    int sameSlot = -1, firstEmptySlot = -1, expiredSlot = -1;
     uint8_t idA = measure->idA, idB = measure->idB;
     uint32_t expiredTime = clock_time();
     int idxA, idxB;
     int i;
 
+    // 寻找在queue中可以存放新的tdoa数据的位置
     for(i = 0; i < TDOA_QUEUE_LENTH; i++){
         if(((queue[i].used & 1) == 0)){
             if(firstEmptySlot == -1)
                 firstEmptySlot = i;
         }else if(queue[i].endOfLife < expiredTime){
-            memset(&queue[i], 0, sizeof(tdoaMeasurement_t));
-        	//queue[i].used &= 0;
-            expiredSlot = i;
-
             //同时更新ids数组及packets数组。
             int idxC, idxD;
-            if((idxC = getAnchorIdIndex(queue[i].idA)) != -1)
+            if((idxC = getAnchorIdIndex(queue[i].idA)) != -1){
                 packets[idxC]--;
+            }
             else
                 printf("Error: getAnchorIdIndex return -1.\n");
 
@@ -62,27 +60,18 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
                 packets[idxD]--;
             else
                 printf("Error: getAnchorIdIndex return -1.\n");
+
+            memset(&queue[i], 0, sizeof(tdoaMeasurement_t));
+            expiredSlot = i;
         }else if((queue[i].idA == idA) && (queue[i].idB == idB)){
             sameSlot = i;
         }
     }
 
-    //同时更新ids数组及packets数组。
-	if((idxA = getAnchorIdIndex(idA)) == -1){
-		if((idxA = createAnchorIdIndex(idA)) != -1)
-			ids[idxA] = idA;
-		else
-			printf("Error: createAnchorIdIndex return -1.\n");
-	}
-	if((idxB = getAnchorIdIndex(idB)) == -1){
-		if((idxB = createAnchorIdIndex(idB)) != -1)
-			ids[idxB] = idB;
-		else
-			printf("Error: createAnchorIdIndex return -1.\n");
-	}
-
     if(sameSlot != -1){
         createTdoaMeasurement(measure, &queue[sameSlot]);
+        idxA = getAnchorIdIndex(idA);
+        idxB = getAnchorIdIndex(idB);
     }else{
         if(firstEmptySlot != -1){
             createTdoaMeasurement(measure, &queue[firstEmptySlot]);
@@ -92,10 +81,24 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
             queue[expiredSlot].used |= 1;
         }
 
+        //同时更新ids数组及packets数组。
+		if((idxA = getAnchorIdIndex(idA)) == -1){
+			if((idxA = createAnchorIdIndex(idA)) == -1)
+				printf("Error: createAnchorIdIndex return -1.\n");
+
+		}
+		if((idxB = getAnchorIdIndex(idB)) == -1){
+			if((idxB = createAnchorIdIndex(idB)) == -1)
+				printf("Error: createAnchorIdIndex return -1.\n");
+		}
+
+        printf("****************************************** new tdoa! %d 's packets is %d, ready to plus\n",idA,packets[idxA]);
+
     	packets[idxA]++;
     	packets[idxB]++;
+    	printf("****************************************** new tdoa! %d 's packets is %d, plus\n",idA,packets[idxA]);
     } 
-//    printf("sameSlot = %d, firstEmptySlot = %d, oldestSlot = %d\n", sameSlot, firstEmptySlot, expiredSlot);
+    printf("############################sameSlot = %d, firstEmptySlot = %d, oldestSlot = %d\n", sameSlot, firstEmptySlot, expiredSlot);
     for(i = 0; i < 8; i++){
     	if((queue[i].used & 1) == 1){
     		printf("queue: idA is %d, idB is %d\n",queue[i].idA,queue[i].idB);
@@ -104,6 +107,7 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
     for(i = 0; i < 8; i++){
     	printf("ids[%d].id is %d, packets[i].count is %d\n", i, ids[i], packets[i]);
     }
+
     return (packets[idxA] >= 3) ? idxA : ((packets[idxB] >= 3) ? idxB : -1);
 }
 
@@ -304,8 +308,10 @@ static int createAnchorIdIndex(uint8_t id)
 {
     int i;
     for(i = 0; i < TDOA_ANCHOR_COUNT; i++){
-        if(packets[i] == 0)
-            return i;
+        if(ids[i] == 0){
+        	ids[i] = id;
+        	return i;
+        }
     }
     return -1;
 }
