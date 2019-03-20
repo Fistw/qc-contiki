@@ -3,8 +3,8 @@
 
 static tdoaQueue_t queue;
 
-static uint8_t ids[TDOA_ANCHOR_COUNT];
-static uint8_t packets[TDOA_ANCHOR_COUNT];
+static uint8_t ids[TDOA_ANCHOR_COUNT] = {0};
+static int packets[TDOA_ANCHOR_COUNT] = {0};
 
 static tdoaMeasurement_t tdoaTriad[3];
 static float distances[3][3];
@@ -28,7 +28,7 @@ static void createVector(point_t* pstart, point_t* pend, point_t* vector);
  */
 bool filterTdoaMeasurement(tdoaMeasurement_t* m)
 {
-    return (m->distance > m->distanceDiff);
+    return (m->distance > fabsf(m->distanceDiff));
 }
 
 /*
@@ -39,14 +39,16 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
     int sameSlot = -1, firstEmptySlot = -1, expiredSlot = 0;
     uint8_t idA = measure->idA, idB = measure->idB;
     uint32_t expiredTime = clock_time();
+    int idxA, idxB;
     int i;
 
     for(i = 0; i < TDOA_QUEUE_LENTH; i++){
-        if(!(queue[i].used & 1)){
-            if(firstEmptySlot != -1)
+        if(((queue[i].used & 1) == 0)){
+            if(firstEmptySlot == -1)
                 firstEmptySlot = i;
         }else if(queue[i].endOfLife < expiredTime){
-            queue[i].used &= 0;
+            memset(&queue[i], 0, sizeof(tdoaMeasurement_t));
+        	//queue[i].used &= 0;
             expiredSlot = i;
 
             //同时更新ids数组及packets数组。
@@ -65,6 +67,20 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
         }
     }
 
+    //同时更新ids数组及packets数组。
+	if((idxA = getAnchorIdIndex(idA)) == -1){
+		if((idxA = createAnchorIdIndex(idA)) != -1)
+			ids[idxA] = idA;
+		else
+			printf("Error: createAnchorIdIndex return -1.\n");
+	}
+	if((idxB = getAnchorIdIndex(idB)) == -1){
+		if((idxB = createAnchorIdIndex(idB)) != -1)
+			ids[idxB] = idB;
+		else
+			printf("Error: createAnchorIdIndex return -1.\n");
+	}
+
     if(sameSlot != -1){
         createTdoaMeasurement(measure, &queue[sameSlot]);
     }else{
@@ -76,26 +92,19 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
             queue[expiredSlot].used |= 1;
         }
 
-        //同时更新ids数组及packets数组。
-        int idxA, idxB;
-        if((idxA = getAnchorIdIndex(idA)) == -1){
-            idxA = createAnchorIdIndex(idA);
-            ids[idxA] = idA;
-        }else{
-            printf("Error: createAnchorIdIndex return -1.\n");
-        }
-        if((idxB = getAnchorIdIndex(idB)) == -1){
-            idxB = createAnchorIdIndex(idB);
-            ids[idxB] = idB;
-        }else{
-            printf("Error: createAnchorIdIndex return -1.\n");
-        }
-        packets[idxA]++;
-        packets[idxB]++;
-
-        return (packets[idxA] >= 3) ? idxA : ((packets[idxB] >= 3) ? idxB : -1);
+    	packets[idxA]++;
+    	packets[idxB]++;
     } 
-    return -1;
+//    printf("sameSlot = %d, firstEmptySlot = %d, oldestSlot = %d\n", sameSlot, firstEmptySlot, expiredSlot);
+    for(i = 0; i < 8; i++){
+    	if((queue[i].used & 1) == 1){
+    		printf("queue: idA is %d, idB is %d\n",queue[i].idA,queue[i].idB);
+    	}
+    }
+    for(i = 0; i < 8; i++){
+    	printf("ids[%d].id is %d, packets[i].count is %d\n", i, ids[i], packets[i]);
+    }
+    return (packets[idxA] >= 3) ? idxA : ((packets[idxB] >= 3) ? idxB : -1);
 }
 
 /*
@@ -106,13 +115,16 @@ void fangGetTdoaMeasurement(int idx)
     uint8_t id = ids[idx];
     int i, count = 0;
     for(i = 0; i < TDOA_QUEUE_LENTH, count < 3; i++){
-        if((queue[i].used &= 1) && (queue[i].idA == id || queue[i].idB == id)){
+        if(((queue[i].used & 1) == 1) && (queue[i].idA == id || queue[i].idB == id)){
             createTdoaMeasurement(&queue[i], &tdoaTriad[count]);
             if(queue[i].idB == id)
                 inverseTdoaMeasurement(&tdoaTriad[count]);
+//            printf("tdoaTriad:idA is %u, idB is %u\n",tdoaTriad[count].idA,tdoaTriad[count].idB);
+//            printf("queue:idA is %u, idB is %u\n",queue[i].idA,queue[i].idB);
             count++;
         }
     }
+    printf("Debug: fangGetTdoaMeasurement has executed, count = %d\n", count);
 }
 
 /*
@@ -120,31 +132,57 @@ void fangGetTdoaMeasurement(int idx)
  */
 bool getAnchorDistances(tdoaAnchorInfo_t anchorStorage[])
 {
-    uint8_t id2, id3, id4;
-    tdoaAnchorContext_t t2, t3;
+    uint8_t id1, id2, id3, id4;
+    tdoaAnchorContext_t t2, t3, t4;
     uint32_t nowms = clock_time();
     int64_t tof23, tof24, tof34;
     float D12, D13, D14, D23, D24, D34;
     
-    id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
-    
-    if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)
-            && tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
-        tof23 = tdoaStorageGetTimeOfFlight(&t2, id3);
-        tof24 = tdoaStorageGetTimeOfFlight(&t2, id4);
-        tof34 = tdoaStorageGetTimeOfFlight(&t3, id4);
 
-        D12 = tdoaTriad[0].distance, D13 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance;
-        D23 = SPEED_OF_LIGHT * tof23 / UWB_TS_FREQ;
-        D24 = SPEED_OF_LIGHT * tof24 / UWB_TS_FREQ;
-        D34 = SPEED_OF_LIGHT * tof34 / UWB_TS_FREQ;
+	int i;
+	for(i = 0; i < 3; i++){
+		tdoaMeasurement_t* t = &tdoaTriad[i];
+		printf("tdoaTriad[%d]: idA=%d,idB=%d,distanceDiff=%f\n",i,t->idA,t->idB,t->distanceDiff);
+	}
+//	tdoaTimeOfFlight_t *atof2, *atof3, *atof4;
+//	if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)){
+//		atof2 = t2.anchorInfo->tof;
+//		for(i = 0; i < 3; i++){
+//				printf("tof of id2 and id%u is %lld, endoflife = %u, now = %u\n",(unsigned)atof2[i].id, atof2[i].tof, atof2[i].endOfLife, clock_time());
+//			}
+//	}
+//	if(tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
+//		atof3 = t3.anchorInfo->tof;
+//		for(i = 0; i < 3; i++){
+//				printf("tof of id3 and id%u is %lld, endoflife = %u, now = %u\n",(unsigned)atof3[i].id, atof3[i].tof, atof3[i].endOfLife, clock_time());
+//			}
+//	}
+//	if(tdoaStorageGetAnchorCtx(anchorStorage, id4, nowms, &t4)){
+//		atof4 = t4.anchorInfo->tof;
+//		for(i = 0; i < 3; i++){
+//			printf("tof of id4 and id%u is %lld, endoflife = %u, now = %u\n",(unsigned)atof4[i].id, atof4[i].tof, atof4[i].endOfLife, clock_time());
+//		}
+//	}
+//
+//	for(i = 0; i < 16; i++){
+//		if(anchorStorage[i].isInitialized){
+//			printf("storaged anchorCtx.id is %u\n",anchorStorage[i].id);
+//		}
+//	}
 
-        distances[0][0] = D23, distances[0][1] = D24, distances[0][2] = D14;
-        distances[1][1] = D23,distances[1][2] = D24;
-        distances[2][2] = D34;
-
-        return true;
-    }
+//	if((tof23 = tdoaStorageGetTimeOfFlight(&t2, id3)) && (tof24 = tdoaStorageGetTimeOfFlight(&t2, id4)) && (tof34 = tdoaStorageGetTimeOfFlight(&t3, id4))){
+//		D12 = tdoaTriad[0].distance, D13 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance;
+//		D23 = SPEED_OF_LIGHT * truncateToAnchorTimeStamp(tof23) / UWB_TS_FREQ;
+//		D24 = SPEED_OF_LIGHT * truncateToAnchorTimeStamp(tof24) / UWB_TS_FREQ;
+//		D34 = SPEED_OF_LIGHT * truncateToAnchorTimeStamp(tof34) / UWB_TS_FREQ;
+//
+//		distances[0][0] = D23, distances[0][1] = D24, distances[0][2] = D14;
+//		distances[1][1] = D23,distances[1][2] = D24;
+//		distances[2][2] = D34;
+//
+//		printf("D12 = %lld,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
+//		return true;
+//	}
     return false;
 }
 
@@ -173,6 +211,7 @@ void createInnerAxis()
     
     //判断从基站4的z轴坐标正负性。
     *z4 = judgeZAxis() ? *z4 : -(*z4);
+    printf("anchor2(%f,0,0),anchor3(%f,%f,0),anchor4(%f,%f,%f)\n",*x2,*x3,*y3,*x4,*y4,*z4);
 }
 
 /*
@@ -214,6 +253,7 @@ void calcTagInnerCoodinate()
     *x = (getMinXAxis() <= tmp1 && tmp1 <= getMaxXAxis()) ? tmp1 : tmp2;
     *y = g*(*x)+h;
     *z = k*(*x)+l;
+    printf("tag innerCoodinate(%f,%f,%f\n",*x,*y,*z);
 }
 
 /*
@@ -247,6 +287,7 @@ void changeAxisFromInnerToOuter(point_t* pTagCrd)
     }
     pTagCrd->x = array[0], pTagCrd->y = array[1], pTagCrd->z = array[2];
     pTagCrd->timestamp = clock_time();
+    printf("tag outer Coodinate(%f,%f,%f)\n",array[0],array[1],array[2]);
 }
 
 static int getAnchorIdIndex(uint8_t id)
@@ -298,7 +339,19 @@ static void inverseTdoaMeasurement(tdoaMeasurement_t* t)
 
 static bool judgeZAxis()
 {
-    return (tdoaTriad[2].anchorPosition[1].z > 0);
+    point_t v12, v13, v14, n;
+    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &v12);
+    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &v13);
+    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &v14);
+
+    n.x = v12.y*v13.z-v13.y*v12.z;
+    n.y = v13.x*v12.z-v12.x*v13.z;
+    n.z = v12.x*v13.y-v13.x*v12.y;
+
+    float cosVal;
+    cosVal = multipleVector(&n, &v14) / sqrtf(multipleVector(&n, &n)*multipleVector(&v14, &v14));
+
+    return (cosVal > 0) ? true : false;
 }
 
 static float getMinXAxis()

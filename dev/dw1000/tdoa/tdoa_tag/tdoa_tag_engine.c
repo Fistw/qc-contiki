@@ -38,7 +38,7 @@ void tdoaEngineInit(tdoaEngineState_t *engineState, const uint32_t now_ms, tdoaE
 }
 
 #define TRUNCATE_TO_ANCHOR_TS_BITMAP 0x00FFFFFFFF
-static uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
+uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
 {
     return fullTimeStamp & TRUNCATE_TO_ANCHOR_TS_BITMAP;
 }
@@ -71,15 +71,15 @@ static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorC
         tdoa.distance = SPEED_OF_LIGHT * tof / UWB_TS_FREQ;
         tdoa.endOfLife = clock_time() + TDOA_EXPIRED;
 
-        engineState->sendTdoaToEstimator(&tdoa);
         printf("get the distance diff from  %d  and  %d  :::  %lf\n", idA, idB, distanceDiff);
+        engineState->sendTdoaToEstimator(&tdoa);
     }
     // tdoaStats_t *stats = &engineState->stats;
 
     // tdoaMeasurement_t tdoa = {tdoa.stdDev = MEASUREMENT_NOISE_STD,
     // 						  tdoa.distanceDiff = distanceDiff};
     // if (tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
-    // {
+    // {e:sameSlot = 3, firstEmptySlot = 5, oldestSlot = 0␊
     //     // stats->packetsToEstimator++;
     //     engineState->sendTdoaToEstimator(&tdoa);
 

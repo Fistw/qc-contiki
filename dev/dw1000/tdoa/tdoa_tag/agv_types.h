@@ -106,6 +106,13 @@ typedef struct tdoaMeasurement_s {
 
 typedef tdoaMeasurement_t tdoaQueue_t[TDOA_QUEUE_LENTH];//理论上最多8个基站间的TDOA数据量为28.
 
+//typedef struct anchorIds_s {
+//	uint8_t id;
+//	uint8_t used;
+//} anchorIds_t;
+//
+//typedef anchorIds_t ids_t[TDOA_ANCHOR_COUNT];
+
 typedef struct sensorData_s {
   Axis3f acc;               // Gs
   Axis3f gyro;              // deg/s
