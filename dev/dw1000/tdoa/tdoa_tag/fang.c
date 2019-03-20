@@ -92,21 +92,21 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
 				printf("Error: createAnchorIdIndex return -1.\n");
 		}
 
-        printf("****************************************** new tdoa! %d 's packets is %d, ready to plus\n",idA,packets[idxA]);
+//        printf("****************************************** new tdoa! %d 's packets is %d, ready to plus\n",idA,packets[idxA]);
 
     	packets[idxA]++;
     	packets[idxB]++;
-    	printf("****************************************** new tdoa! %d 's packets is %d, plus\n",idA,packets[idxA]);
+//    	printf("****************************************** new tdoa! %d 's packets is %d, plus\n",idA,packets[idxA]);
     } 
-    printf("############################sameSlot = %d, firstEmptySlot = %d, oldestSlot = %d\n", sameSlot, firstEmptySlot, expiredSlot);
+//    printf("############################sameSlot = %d, firstEmptySlot = %d, oldestSlot = %d\n", sameSlot, firstEmptySlot, expiredSlot);
     for(i = 0; i < 8; i++){
     	if((queue[i].used & 1) == 1){
     		printf("queue: idA is %d, idB is %d\n",queue[i].idA,queue[i].idB);
     	}
     }
-    for(i = 0; i < 8; i++){
-    	printf("ids[%d].id is %d, packets[i].count is %d\n", i, ids[i], packets[i]);
-    }
+//    for(i = 0; i < 8; i++){
+//    	printf("ids[%d].id is %d, packets[i].count is %d\n", i, ids[i], packets[i]);
+//    }
 
     return (packets[idxA] >= 3) ? idxA : ((packets[idxB] >= 3) ? idxB : -1);
 }
@@ -136,58 +136,77 @@ void fangGetTdoaMeasurement(int idx)
  */
 bool getAnchorDistances(tdoaAnchorInfo_t anchorStorage[])
 {
-    uint8_t id1, id2, id3, id4;
+    uint8_t id2, id3, id4;
     tdoaAnchorContext_t t2, t3, t4;
     uint32_t nowms = clock_time();
     int64_t tof23, tof24, tof34;
     float D12, D13, D14, D23, D24, D34;
     
+    id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
 
-	int i;
+    int i;
 	for(i = 0; i < 3; i++){
 		tdoaMeasurement_t* t = &tdoaTriad[i];
 		printf("tdoaTriad[%d]: idA=%d,idB=%d,distanceDiff=%f\n",i,t->idA,t->idB,t->distanceDiff);
 	}
-//	tdoaTimeOfFlight_t *atof2, *atof3, *atof4;
-//	if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)){
-//		atof2 = t2.anchorInfo->tof;
-//		for(i = 0; i < 3; i++){
-//				printf("tof of id2 and id%u is %lld, endoflife = %u, now = %u\n",(unsigned)atof2[i].id, atof2[i].tof, atof2[i].endOfLife, clock_time());
-//			}
-//	}
-//	if(tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
-//		atof3 = t3.anchorInfo->tof;
-//		for(i = 0; i < 3; i++){
-//				printf("tof of id3 and id%u is %lld, endoflife = %u, now = %u\n",(unsigned)atof3[i].id, atof3[i].tof, atof3[i].endOfLife, clock_time());
-//			}
-//	}
-//	if(tdoaStorageGetAnchorCtx(anchorStorage, id4, nowms, &t4)){
-//		atof4 = t4.anchorInfo->tof;
-//		for(i = 0; i < 3; i++){
-//			printf("tof of id4 and id%u is %lld, endoflife = %u, now = %u\n",(unsigned)atof4[i].id, atof4[i].tof, atof4[i].endOfLife, clock_time());
-//		}
-//	}
+	tdoaTimeOfFlight_t *atof2, *atof3, *atof4;
+	if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)){
+		atof2 = t2.anchorInfo->tof;
+		for(i = 0; i < 16; i++){
+			if(atof2[i].id != 0)
+				printf("tof of id%d and id%d is %lld, endoflife = %u, now = %u\n",id2, (unsigned)atof2[i].id, atof2[i].tof, atof2[i].endOfLife, clock_time());
+			}
+	}
+	if(tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
+		atof3 = t3.anchorInfo->tof;
+		for(i = 0; i < 16; i++){
+			if(atof3[i].id != 0)
+				printf("tof of id%d and id%d is %lld, endoflife = %u, now = %u\n",id3, (unsigned)atof3[i].id, atof3[i].tof, atof3[i].endOfLife, clock_time());
+			}
+	}
+	if(tdoaStorageGetAnchorCtx(anchorStorage, id4, nowms, &t4)){
+		atof4 = t4.anchorInfo->tof;
+		for(i = 0; i < 16; i++){
+			if(atof4[i].id != 0)
+				printf("tof of id%d and id%d is %lld, endoflife = %u, now = %u\n",id4, (unsigned)atof4[i].id, atof4[i].tof, atof4[i].endOfLife, clock_time());
+		}
+	}
+
+    if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)){
+    	tof23 = tdoaStorageGetTimeOfFlight(&t2, id3);
+    	tof24 = tdoaStorageGetTimeOfFlight(&t2, id4);
+    }
+    if(tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
+		if(tof23 == 0)
+			tof23 = tdoaStorageGetTimeOfFlight(&t3, id2);
+		tof34 = tdoaStorageGetTimeOfFlight(&t3, id4);
+    }
+    if(((tof24 == 0) || (tof34 == 0)) && tdoaStorageGetAnchorCtx(anchorStorage, id4, nowms, &t4)){
+		tof24 = tdoaStorageGetTimeOfFlight(&t4, id2);
+		tof34 = tdoaStorageGetTimeOfFlight(&t4, id3);
+	}
+    printf("tof23=%lld, tof24 = %lld, tof34 = %lld\n",tof23,tof24, tof34);
+	if((tof23 != 0) && (tof24 != 0) && (tof34 != 0)){
+		D12 = tdoaTriad[0].distance, D13 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance;
+		D23 = SPEED_OF_LIGHT * tof23 / UWB_TS_FREQ;
+		D24 = SPEED_OF_LIGHT * tof24 / UWB_TS_FREQ;
+		D34 = SPEED_OF_LIGHT * tof34 / UWB_TS_FREQ;
+
+		distances[0][0] = D12, distances[0][1] = D13, distances[0][2] = D14;
+		distances[1][1] = D23,distances[1][2] = D24;
+		distances[2][2] = D34;
+
+		printf("D12 = %f,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
+		return true;
+	}
+	return false;
+
 //
 //	for(i = 0; i < 16; i++){
 //		if(anchorStorage[i].isInitialized){
 //			printf("storaged anchorCtx.id is %u\n",anchorStorage[i].id);
 //		}
 //	}
-
-//	if((tof23 = tdoaStorageGetTimeOfFlight(&t2, id3)) && (tof24 = tdoaStorageGetTimeOfFlight(&t2, id4)) && (tof34 = tdoaStorageGetTimeOfFlight(&t3, id4))){
-//		D12 = tdoaTriad[0].distance, D13 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance;
-//		D23 = SPEED_OF_LIGHT * truncateToAnchorTimeStamp(tof23) / UWB_TS_FREQ;
-//		D24 = SPEED_OF_LIGHT * truncateToAnchorTimeStamp(tof24) / UWB_TS_FREQ;
-//		D34 = SPEED_OF_LIGHT * truncateToAnchorTimeStamp(tof34) / UWB_TS_FREQ;
-//
-//		distances[0][0] = D23, distances[0][1] = D24, distances[0][2] = D14;
-//		distances[1][1] = D23,distances[1][2] = D24;
-//		distances[2][2] = D34;
-//
-//		printf("D12 = %lld,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
-//		return true;
-//	}
-    return false;
 }
 
 /*

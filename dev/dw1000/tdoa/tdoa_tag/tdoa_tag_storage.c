@@ -3,7 +3,8 @@
 #include "tdoa_tag_storage.h"
 
 // All times in milli seconds
-#define TOF_VALIDITY_PERIOD (2 * 1000)
+//#define TOF_VALIDITY_PERIOD (2 * 1000)
+#define TOF_VALIDITY_PERIOD (3 * 1000)
 #define REMOTE_DATA_VALIDITY_PERIOD 30
 #define ANCHOR_POSITION_VALIDITY_PERIOD (2 * 1000)
 #define ANCHOR_ACTIVE_VALIDITY_PERIOD (2 * 1000)

@@ -110,13 +110,21 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
   tdoaEngineGetAnchorCtxForPacketProcessing(&engineState, anchorId, now_ms, &anchorCtx);
 
   // 粗暴设置基站位置
-  if (anchorId == 2)
+  if (anchorId == 1)
   {
-    tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.0);
+    tdoaStorageSetAnchorPosition(&anchorCtx, 1.293, 0.0, -0.574);
+  }
+  else if(anchorId == 2)
+  {
+    tdoaStorageSetAnchorPosition(&anchorCtx, 1.293, 3.2, 0.0);
+  }
+  else if(anchorId == 10)
+  {
+	  tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.551);
   }
   else
   {
-    tdoaStorageSetAnchorPosition(&anchorCtx, 1.0, 1.0, 1.0);
+	 tdoaStorageSetAnchorPosition(&anchorCtx, 1.293, 1.6, 0.0);
   }
 
   // 更新数据
