@@ -178,17 +178,14 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
       idx = fangPutTdoaMeasurement(measureA);
       if(idx != -1){
         fangGetTdoaMeasurement(idx);
-        if(getAnchorDistances(engineState.anchorInfoArray)){
-          createInnerAxis();
-          calcTagInnerCoodinate1();
-          changeAxisFromInnerToOuter(&tagCrd);
-          printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-          calcTagInnerCoodinate2();
-          changeAxisFromInnerToOuter(&tagCrd);
-          printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-        }else{
-          printf("Debug: can't get enough distance.\n");
-        }
+        getAnchorDistances();
+        createInnerAxis();
+        calcTagInnerCoodinate1();
+        changeAxisFromInnerToOuter(&tagCrd);
+        printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+        calcTagInnerCoodinate2();
+        changeAxisFromInnerToOuter(&tagCrd);
+        printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
       }else{
         printf("Debug: the idx is -1.\n");
       }

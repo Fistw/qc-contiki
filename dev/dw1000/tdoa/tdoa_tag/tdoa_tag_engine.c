@@ -67,8 +67,8 @@ static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorC
             setAnchorPosition(&posA, &tdoa.anchorPosition[1]);
             tdoa.distanceDiff = distanceDiff;
         }
-        int64_t tof = tdoaStorageGetTimeOfFlight(anchorACtx, idB);
-        tdoa.distance = SPEED_OF_LIGHT * tof / UWB_TS_FREQ;
+        // int64_t tof = tdoaStorageGetTimeOfFlight(anchorACtx, idB);
+        // tdoa.distance = SPEED_OF_LIGHT * tof / UWB_TS_FREQ;
         tdoa.endOfLife = clock_time() + TDOA_EXPIRED;
 
         printf("get the distance diff from  %d  and  %d  :::  %lf,\n the distance between them is %lf\n", idA, idB, distanceDiff,tdoa.distance);

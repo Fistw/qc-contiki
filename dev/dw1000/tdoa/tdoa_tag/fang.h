@@ -19,7 +19,7 @@ void fangGetTdoaMeasurement(int idx);
 /*
  * 获取基站测距。
  */
-bool getAnchorDistances(tdoaAnchorInfo_t anchorStorage[]);
+void getAnchorDistances(void);
 /*
  * 建立内坐标轴。
  */
