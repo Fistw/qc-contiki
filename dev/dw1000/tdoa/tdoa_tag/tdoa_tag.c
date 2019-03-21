@@ -180,7 +180,10 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
         fangGetTdoaMeasurement(idx);
         if(getAnchorDistances(engineState.anchorInfoArray)){
           createInnerAxis();
-          calcTagInnerCoodinate();
+          calcTagInnerCoodinate1();
+          changeAxisFromInnerToOuter(&tagCrd);
+          printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+          calcTagInnerCoodinate2();
           changeAxisFromInnerToOuter(&tagCrd);
           printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
         }else{

@@ -27,7 +27,11 @@ void createInnerAxis();
 /*
  * 计算标签在内坐标轴下的坐标。
  */
-void calcTagInnerCoodinate();
+void calcTagInnerCoodinate1();
+/*
+ * 计算标签在内坐标轴下的坐标。
+ */
+void calcTagInnerCoodinate2();
 /*
  * 坐标轴转换（内坐标轴转换为外坐标轴）。
  */

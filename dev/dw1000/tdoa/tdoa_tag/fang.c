@@ -229,7 +229,7 @@ void createInnerAxis()
     *x3 = (powf(D23,2)-pD13-pD12) / (-2*D12);
     *y3 = sqrtf(pD13 - powf(*x3, 2));
     *x4 = (powf(D24,2)-pD14-pD12) / (-2*D12);
-    *y4 = ((-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)+powf(*y3,2)-pD12-powf(D34,2)+powf(D24,2)) / (2*(*y3)+1);
+    *y4 = ((-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)+powf(*y3,2)-pD12-powf(D34,2)+powf(D24,2)) / (2*(*y3));
     *z4 = sqrtf(pD14 - powf(*x4,2) - powf(*y4,2));
     
     //判断从基站4的z轴坐标正负性。
@@ -240,7 +240,7 @@ void createInnerAxis()
 /*
  * 计算标签在内坐标轴下的坐标。
  */
-void calcTagInnerCoodinate()
+void calcTagInnerCoodinate1()
 {
     float R21, R31, R41;
     R21 = tdoaTriad[0].distanceDiff;
@@ -273,7 +273,51 @@ void calcTagInnerCoodinate()
     tmp1 = (-e+sqrtf(powf(e,2)-4*d*f))/(2*d);
     tmp2 = (-e-sqrtf(powf(e,2)-4*d*f))/(2*d);
     x = &innerAxisQuad[4].x, y = &innerAxisQuad[4].y, z = &innerAxisQuad[4].z;
-    *x = (getMinXAxis() <= tmp1 && tmp1 <= getMaxXAxis()) ? tmp1 : tmp2;
+    // *x = (getMinXAxis() <= tmp1 && tmp1 <= getMaxXAxis()) ? tmp1 : tmp2;
+    *x = tmp1;
+    *y = g*(*x)+h;
+    *z = k*(*x)+l;
+    printf("tag innerCoodinate(%f,%f,%f\n",*x,*y,*z);
+}
+
+/*
+ * 计算标签在内坐标轴下的坐标。
+ */
+void calcTagInnerCoodinate2()
+{
+    float R21, R31, R41;
+    R21 = tdoaTriad[0].distanceDiff;
+    R31 = tdoaTriad[1].distanceDiff;
+    R41 = tdoaTriad[2].distanceDiff;
+    
+    const float x2 = innerAxisQuad[1].x;
+    const float x3 = innerAxisQuad[2].x, y3 = innerAxisQuad[2].y;
+    const float x4 = innerAxisQuad[3].x, y4 = innerAxisQuad[3].y, z4 = innerAxisQuad[3].z;
+
+    const float px2 = powf(x2, 2), px3 = powf(x3, 2), py3 = powf(y3, 2);
+    const float pR21 = powf(R21, 2);
+
+    float g, h, k, l;
+    
+    g = (R31*x2/R21 - x3)/y3;
+    h = (px3+py3-powf(R31,2)+R31*R21*(1-px2/pR21))/(2*y3);
+    k = (R41*x2*y3-R21*x4*y3-R31*x2*y4+R31*x3*y4)/(R21*y3*z4);
+    l = -y4*(px3+py3)/(2*y3*z4)
+        +(R31*y4-R41*y3)*(px2-R21*(R21-R31))/(2*R21*y3*z4)
+        +(powf(x4,2)+powf(y4,2)+powf(z4,2))/(2*z4);
+    
+    float d, e, f;
+
+    d = 4*pR21*(1+powf(g,2)+powf(k,2))-4*px2;
+    e = 8*pR21*(g*h+l*k)-4*x2*(pR21-px2);
+    f = 4*pR21*(powf(h,2)+powf(l,2))-powf(pR21-px2,2);
+
+    float *x, *y, *z, tmp1,tmp2;
+    tmp1 = (-e+sqrtf(powf(e,2)-4*d*f))/(2*d);
+    tmp2 = (-e-sqrtf(powf(e,2)-4*d*f))/(2*d);
+    x = &innerAxisQuad[4].x, y = &innerAxisQuad[4].y, z = &innerAxisQuad[4].z;
+    // *x = (getMinXAxis() <= tmp1 && tmp1 <= getMaxXAxis()) ? tmp1 : tmp2;
+    *x = tmp2;
     *y = g*(*x)+h;
     *z = k*(*x)+l;
     printf("tag innerCoodinate(%f,%f,%f\n",*x,*y,*z);
