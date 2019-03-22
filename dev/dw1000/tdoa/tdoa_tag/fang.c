@@ -28,7 +28,10 @@ static void createVector(point_t* pstart, point_t* pend, point_t* vector);
  */
 bool filterTdoaMeasurement(tdoaMeasurement_t* m)
 {
-    return (m->distance > fabsf(m->distanceDiff));
+    point_t v;
+    createVector(&m->anchorPosition[0], &m->anchorPosition[1], &v);
+
+	return (sqrtf(multipleVector(&v, &v)) > fabsf(m->distanceDiff));
 }
 
 /*
@@ -92,21 +95,14 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
 				printf("Error: createAnchorIdIndex return -1.\n");
 		}
 
-//        printf("****************************************** new tdoa! %d 's packets is %d, ready to plus\n",idA,packets[idxA]);
-
     	packets[idxA]++;
     	packets[idxB]++;
-//    	printf("****************************************** new tdoa! %d 's packets is %d, plus\n",idA,packets[idxA]);
     } 
-//    printf("############################sameSlot = %d, firstEmptySlot = %d, oldestSlot = %d\n", sameSlot, firstEmptySlot, expiredSlot);
     for(i = 0; i < 8; i++){
     	if((queue[i].used & 1) == 1){
     		printf("queue: idA is %d, idB is %d\n",queue[i].idA,queue[i].idB);
     	}
     }
-//    for(i = 0; i < 8; i++){
-//    	printf("ids[%d].id is %d, packets[i].count is %d\n", i, ids[i], packets[i]);
-//    }
 
     return (packets[idxA] >= 3) ? idxA : ((packets[idxB] >= 3) ? idxB : -1);
 }
@@ -123,8 +119,6 @@ void fangGetTdoaMeasurement(int idx)
             createTdoaMeasurement(&queue[i], &tdoaTriad[count]);
             if(queue[i].idB == id)
                 inverseTdoaMeasurement(&tdoaTriad[count]);
-//            printf("tdoaTriad:idA is %u, idB is %u\n",tdoaTriad[count].idA,tdoaTriad[count].idB);
-//            printf("queue:idA is %u, idB is %u\n",queue[i].idA,queue[i].idB);
             count++;
         }
     }
@@ -136,7 +130,7 @@ void fangGetTdoaMeasurement(int idx)
  */
 void getAnchorDistances(void)
 {
-    // uint8_t id2, id3, id4;
+     uint8_t id1, id2, id3, id4;
     // tdoaAnchorContext_t t2, t3, t4;
     // uint32_t nowms = clock_time();
     // int64_t tof23, tof24, tof34;
@@ -155,16 +149,20 @@ void getAnchorDistances(void)
     createVector(a2, a4, &v24);
     createVector(a3, a4, &v34);
 
-    D12 = multipleVector(&v12, &v12);
-    D13 = multipleVector(&v13, &v13);
-    D14 = multipleVector(&v14, &v14);
-    D23 = multipleVector(&v23, &v23);
-    D34 = multipleVector(&v34, &v34);
+    D12 = sqrtf(multipleVector(&v12, &v12));
+    D13 = sqrtf(multipleVector(&v13, &v13));
+    D14 = sqrtf(multipleVector(&v14, &v14));
+    D23 = sqrtf(multipleVector(&v23, &v23));
+    D24 = sqrtf(multipleVector(&v24, &v24));
+    D34 = sqrtf(multipleVector(&v34, &v34));
 
     distances[0][0] = D12, distances[0][1] = D13, distances[0][2] = D14;
     distances[1][1] = D23,distances[1][2] = D24;
     distances[2][2] = D34;
-    // id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
+
+    id1 = tdoaTriad[0].idA, id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
+    printf("id1 = %d, id2 = %d, id3 = %d, id4 = %d\n", id1, id2, id3, id4);
+    printf("D12 = %f,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
 
     // int i;
 	// for(i = 0; i < 3; i++){
@@ -222,13 +220,6 @@ void getAnchorDistances(void)
 	// 	return true;
 	// }
 	// return false;
-
-//
-//	for(i = 0; i < 16; i++){
-//		if(anchorStorage[i].isInitialized){
-//			printf("storaged anchorCtx.id is %u\n",anchorStorage[i].id);
-//		}
-//	}
 }
 
 /*
@@ -246,12 +237,15 @@ void createInnerAxis()
     D34 = distances[2][2];
 
     const float pD12 = powf(D12,2), pD13 = powf(D13,2), pD14 = powf(D14,2);
-
+    //运算优化
     *x2 = D12;
-    *x3 = (powf(D23,2)-pD13-pD12) / (-2*D12);
+//    *x3 = (powf(D23,2)-pD13-pD12) / (-2*D12);
+    *x3 = (powf(D23,2)-pD13) / (-2*D12) + D12/2;
     *y3 = sqrtf(pD13 - powf(*x3, 2));
-    *x4 = (powf(D24,2)-pD14-pD12) / (-2*D12);
-    *y4 = ((-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)+powf(*y3,2)-pD12-powf(D34,2)+powf(D24,2)) / (2*(*y3));
+//    *x4 = (powf(D24,2)-pD14-pD12) / (-2*D12);
+    *x4 = (powf(D24,2)-pD14) / (-2*D12) + D12/2;
+//    *y4 = ((-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)+powf(*y3,2)-pD12-powf(D34,2)+powf(D24,2)) / (2*(*y3));
+    *y4 = ((-2*(*x3)+2*D12)*(*x4)+powf(*x3,2)-pD12-powf(D34,2)+powf(D24,2)) / (2*(*y3)) + *y3/2;
     *z4 = sqrtf(pD14 - powf(*x4,2) - powf(*y4,2));
     
     //判断从基站4的z轴坐标正负性。
@@ -277,20 +271,20 @@ void calcTagInnerCoodinate1()
     const float pR21 = powf(R21, 2);
 
     float g, h, k, l;
-    
+    //运算优化
     g = (R31*x2/R21 - x3)/y3;
-    h = (px3+py3-powf(R31,2)+R31*R21*(1-px2/pR21))/(2*y3);
-    k = (R41*x2*y3-R21*x4*y3-R31*x2*y4+R31*x3*y4)/(R21*y3*z4);
-    l = -y4*(px3+py3)/(2*y3*z4)
-        +(R31*y4-R41*y3)*(px2-R21*(R21-R31))/(2*R21*y3*z4)
-        +(powf(x4,2)+powf(y4,2)+powf(z4,2))/(2*z4);
-    
+    h = (px3-powf(R31,2)+R31*R21*(1-px2/pR21))/(2*y3) + y3/2;
+    k = R41*x2/(R21*z4) - x4/z4 - R31*x2*y4/(R21*y3*z4) + x3*y4/(y3*z4);
+    l = (powf(x4,2)+powf(y4,2)+R41*(R21-R41))/(2*z4) + z4/2
+    		+ (R31*y4*(R31-R21)-px3*y4)/(2*y3*z4) - y3*y4/(2*z4)
+			+ R31*y4*px2/(2*R21*y3*z4) - R41*px2/(2*R21*z4);
+//    printf("g = %f, h = %f, k = %f, l = %f\n", g, h, k, l);
     float d, e, f;
 
     d = 4*pR21*(1+powf(g,2)+powf(k,2))-4*px2;
     e = 8*pR21*(g*h+l*k)-4*x2*(pR21-px2);
     f = 4*pR21*(powf(h,2)+powf(l,2))-powf(pR21-px2,2);
-
+//    printf("d = %f, e = %f, f = %f\n", d, e, f);
     float *x, *y, *z, tmp1,tmp2;
     tmp1 = (-e+sqrtf(powf(e,2)-4*d*f))/(2*d);
     tmp2 = (-e-sqrtf(powf(e,2)-4*d*f))/(2*d);
@@ -320,20 +314,20 @@ void calcTagInnerCoodinate2()
     const float pR21 = powf(R21, 2);
 
     float g, h, k, l;
-    
+    //运算优化
     g = (R31*x2/R21 - x3)/y3;
-    h = (px3+py3-powf(R31,2)+R31*R21*(1-px2/pR21))/(2*y3);
-    k = (R41*x2*y3-R21*x4*y3-R31*x2*y4+R31*x3*y4)/(R21*y3*z4);
-    l = -y4*(px3+py3)/(2*y3*z4)
-        +(R31*y4-R41*y3)*(px2-R21*(R21-R31))/(2*R21*y3*z4)
-        +(powf(x4,2)+powf(y4,2)+powf(z4,2))/(2*z4);
-    
+    h = (px3-powf(R31,2)+R31*R21*(1-px2/pR21))/(2*y3) + y3/2;
+    k = R41*x2/(R21*z4) - x4/z4 - R31*x2*y4/(R21*y3*z4) + x3*y4/(y3*z4);
+    l = (powf(x4,2)+powf(y4,2)+R41*(R21-R41))/(2*z4) + z4/2
+    		+ (R31*y4*(R31-R21)-px3*y4)/(2*y3*z4) - y3*y4/(2*z4)
+			+ R31*y4*px2/(2*R21*y3*z4) - R41*px2/(2*R21*z4);
+//    printf("g = %f, h = %f, k = %f, l = %f\n", g, h, k, l);
     float d, e, f;
 
     d = 4*pR21*(1+powf(g,2)+powf(k,2))-4*px2;
     e = 8*pR21*(g*h+l*k)-4*x2*(pR21-px2);
     f = 4*pR21*(powf(h,2)+powf(l,2))-powf(pR21-px2,2);
-
+//    printf("d = %f, e = %f, f = %f\n", d, e, f);
     float *x, *y, *z, tmp1,tmp2;
     tmp1 = (-e+sqrtf(powf(e,2)-4*d*f))/(2*d);
     tmp2 = (-e-sqrtf(powf(e,2)-4*d*f))/(2*d);
@@ -350,33 +344,27 @@ void calcTagInnerCoodinate2()
  */
 void changeAxisFromInnerToOuter(point_t* pTagCrd)
 {
-    float b[3];
-    float *b1 = &b[0], *b2 = &b[1], *b3 = &b[2];
+    float a, b, c;
+    float x2i, x3i, y3i, x4i, y4i, z4i, xi, yi, zi;
+    x2i = innerAxisQuad[1].x;
+    x3i = innerAxisQuad[2].x, y3i = innerAxisQuad[2].y;
+    x4i = innerAxisQuad[3].x, y4i = innerAxisQuad[3].y, z4i = innerAxisQuad[3].z;
+    xi = innerAxisQuad[4].x, yi = innerAxisQuad[4].y, zi = innerAxisQuad[4].z;
     
-    *b1 = innerAxisQuad[4].x;
-    *b2 = multipleVector(&innerAxisQuad[4], &innerAxisQuad[2]) 
-            / multipleVector(&innerAxisQuad[2], &innerAxisQuad[2]);
-    *b3 = multipleVector(&innerAxisQuad[4], &innerAxisQuad[3]) 
-            / multipleVector(&innerAxisQuad[3], &innerAxisQuad[3]);
+    c = zi/z4i;
+    b = (yi-y4i*c)/y3i;
+    a = (xi-x3i*b-x4i*c)/x2i;
 
-    point_t u1, u2, u3;
-
-    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &u1);
-    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &u2);
-    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &u3);
+    point_t v12, v13, v14;
+    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &v12);
+    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &v13);
+    createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &v14);
     
-    float M[3][3] = {u1.x,u1.y,u1.z,u2.x,u2.y,u2.z,u3.x,u3.y,u3.z};
     float array[3] = {0};
-    int i, j;
-    
-    for(i = 0; i < 3; i++){
-        for(j = 0; j < 3; j++){
-            array[i] += b[j]*M[j][i];
-        }
-    }
-    pTagCrd->x = array[0], pTagCrd->y = array[1], pTagCrd->z = array[2];
+    pTagCrd->x = v12.x*a+v13.x*a+v14.x*a+innerAxisQuad[0].x;
+    pTagCrd->y = v12.y*b+v13.y*b+v14.y*b+innerAxisQuad[0].y;
+    pTagCrd->z = v12.z*c+v13.z*c+v14.z*c+innerAxisQuad[0].z;
     pTagCrd->timestamp = clock_time();
-    printf("tag outer Coodinate(%f,%f,%f)\n",array[0],array[1],array[2]);
 }
 
 static int getAnchorIdIndex(uint8_t id)
@@ -406,7 +394,7 @@ static void createTdoaMeasurement(tdoaMeasurement_t* src, tdoaMeasurement_t* dst
     setAnchorPosition(&src->anchorPosition[0], &dst->anchorPosition[0]);
     setAnchorPosition(&src->anchorPosition[1], &dst->anchorPosition[1]);
     dst->distanceDiff = src->distanceDiff;
-    dst->distance = src->distance;
+//    dst->distance = src->distance;
     dst->idA = src->idA;
     dst->idB = src->idB;
     dst->endOfLife = src->endOfLife;
@@ -434,15 +422,16 @@ static bool judgeZAxis()
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &v12);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &v13);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &v14);
-
+    printf("v12(%f,%f,%f),v13(%f,%f,%f),v14(%f,%f,%f)\n",v12.x,v12.y,v12.z,v13.x,v13.y,v13.z,v14.x,v14.y,v14.z);
     n.x = v12.y*v13.z-v13.y*v12.z;
     n.y = v13.x*v12.z-v12.x*v13.z;
     n.z = v12.x*v13.y-v13.x*v12.y;
 
-    float cosVal;
-    cosVal = multipleVector(&n, &v14) / sqrtf(multipleVector(&n, &n)*multipleVector(&v14, &v14));
-
-    return (cosVal > 0) ? true : false;
+//    float cosVal;
+//    cosVal = multipleVector(&n, &v14) / sqrtf(multipleVector(&n, &n)*multipleVector(&v14, &v14));
+//
+//    return (cosVal > 0) ? true : false;
+    return (multipleVector(&n, &v14) > 0) ? true : false;
 }
 
 static float getMinXAxis()
@@ -478,24 +467,3 @@ static float multipleVector(point_t* v1, point_t* v2)
 {
     return (v1->x)*(v2->x)+(v1->y)*(v2->y)+(v1->z)*(v2->z);
 }
-
-// static bool judgeZAxis()
-// {
-//     point_t vector12, vector13, n, vector14;
-//     float cosVal;
-
-//     createVector(&innerAxisQuad[0], &innerAxisQuad[1], &vector12);
-//     createVector(&innerAxisQuad[0], &innerAxisQuad[2], &vector13);
-//     createVector(&innerAxisQuad[0], &innerAxisQuad[3], &vector14);
-
-//     n.x = 1;
-//     n.y = (vector12.x*vector13.z - vector13.x*vector12.z) 
-//             / (vector13.y*vector12.z - vector12.y*vector13.z);
-//     n.z = (-vector12.x - vector12.y*n.y) / vector12.z;
-
-//     cosVal = multipleVector(&n, &vector14) / sqrtf(multipleVector(&n, &n)
-//             *multipleVector(&vector14, &vector14));
-    
-//     //是否有可能四个点都在一个平面上。
-//     return cosVal > 0 ? true : false;
-// }
