@@ -158,11 +158,15 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
         return false;
     }
 
-    offset++;
     int remoteCount = 0;
     tdoaStorageGetRemoteSeqNrList(anchorCtx, &remoteCount, seqNr, id);
 
     uint32_t now_ms = anchorCtx->currentTime_ms;
+
+    // generate random offset
+//    offset++;
+    srand(now_ms);
+    offset = rand() % remoteCount;
 
     // Loop over the candidates and pick the first one that is useful
     // An offset (updated for each call) is added to make sure we start at
@@ -209,7 +213,7 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
         tdoaAnchorContext_t otherAnchorCtx;
         if (findSuitableAnchor(engineState, &otherAnchorCtx, anchorCtx))
         {
-            printf("found suitable anchor\n");
+//            printf("found suitable anchor\n");
             // engineState->stats.suitableDataFound++;
             // 计算距离差
             double tdoaDistDiff = calcDistanceDiff(&otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);

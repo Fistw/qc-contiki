@@ -113,12 +113,16 @@ int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
 void fangGetTdoaMeasurement(int idx)
 {
     uint8_t id = ids[idx];
-    int i, count = 0;
-    for(i = 0; i < TDOA_QUEUE_LENTH, count < 3; i++){
+    int index, count = 0;
+    srand(clock_time());
+    int offset = rand() % TDOA_QUEUE_LENTH;
+    for(index = offset; index < TDOA_QUEUE_LENTH + offset, count < 3; index++){
+    	int i = index % TDOA_QUEUE_LENTH;
         if(((queue[i].used & 1) == 1) && (queue[i].idA == id || queue[i].idB == id)){
             createTdoaMeasurement(&queue[i], &tdoaTriad[count]);
             if(queue[i].idB == id)
                 inverseTdoaMeasurement(&tdoaTriad[count]);
+            printf("idA:%d, idB:%d, tdoa:%f \n",tdoaTriad[count].idA,tdoaTriad[count].idB,tdoaTriad[count].distanceDiff);
             count++;
         }
     }
@@ -162,7 +166,8 @@ void getAnchorDistances(void)
 
     id1 = tdoaTriad[0].idA, id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
     printf("id1 = %d, id2 = %d, id3 = %d, id4 = %d\n", id1, id2, id3, id4);
-    printf("D12 = %f,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
+//    printf("one anchor(%f,%f)\n",&tdoaTriad[0].anchorPosition[0].x,&tdoaTriad[0].anchorPosition[0].y);
+//    printf("D12 = %f,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
 
     // int i;
 	// for(i = 0; i < 3; i++){
@@ -250,7 +255,7 @@ void createInnerAxis()
     
     //判断从基站4的z轴坐标正负性。
     *z4 = judgeZAxis() ? *z4 : -(*z4);
-    printf("anchor2(%f,0,0),anchor3(%f,%f,0),anchor4(%f,%f,%f)\n",*x2,*x3,*y3,*x4,*y4,*z4);
+//    printf("anchor2(%f,0,0),anchor3(%f,%f,0),anchor4(%f,%f,%f)\n",*x2,*x3,*y3,*x4,*y4,*z4);
 }
 
 /*
@@ -422,7 +427,7 @@ static bool judgeZAxis()
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &v12);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &v13);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &v14);
-    printf("v12(%f,%f,%f),v13(%f,%f,%f),v14(%f,%f,%f)\n",v12.x,v12.y,v12.z,v13.x,v13.y,v13.z,v14.x,v14.y,v14.z);
+//    printf("v12(%f,%f,%f),v13(%f,%f,%f),v14(%f,%f,%f)\n",v12.x,v12.y,v12.z,v13.x,v13.y,v13.z,v14.x,v14.y,v14.z);
     n.x = v12.y*v13.z-v13.y*v12.z;
     n.y = v13.x*v12.z-v12.x*v13.z;
     n.z = v12.x*v13.y-v13.x*v12.y;
