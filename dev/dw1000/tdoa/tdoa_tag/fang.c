@@ -355,6 +355,7 @@ void changeAxisFromInnerToOuter(point_t* pTagCrd)
     x3i = innerAxisQuad[2].x, y3i = innerAxisQuad[2].y;
     x4i = innerAxisQuad[3].x, y4i = innerAxisQuad[3].y, z4i = innerAxisQuad[3].z;
     xi = innerAxisQuad[4].x, yi = innerAxisQuad[4].y, zi = innerAxisQuad[4].z;
+    printf("x2i=%f,x3i=%f,y3i=%f,x4i=%f,y4i=%f,z4i=%f,xi=%f,yi=%f,zi=%f\n",x2i,x3i,y3i,x4i,y4i,z4i,xi,yi,zi);
     
     c = zi/z4i;
     b = (yi-y4i*c)/y3i;
@@ -364,11 +365,12 @@ void changeAxisFromInnerToOuter(point_t* pTagCrd)
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &v12);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &v13);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &v14);
+    printf("v12(%f,%f,%f),v13(%f,%f,%f),v14(%f,%f,%f)\n",v12.x,v12.y,v12.z,v13.x,v13.y,v13.z,v14.x,v14.y,v14.z);
     
     float array[3] = {0};
-    pTagCrd->x = v12.x*a+v13.x*a+v14.x*a+innerAxisQuad[0].x;
-    pTagCrd->y = v12.y*b+v13.y*b+v14.y*b+innerAxisQuad[0].y;
-    pTagCrd->z = v12.z*c+v13.z*c+v14.z*c+innerAxisQuad[0].z;
+    pTagCrd->x = v12.x*a+v13.x*b+v14.x*c+tdoaTriad[0].anchorPosition[0].x;
+    pTagCrd->y = v12.y*a+v13.y*b+v14.y*c+tdoaTriad[0].anchorPosition[0].y;
+    pTagCrd->z = v12.z*a+v13.z*b+v14.z*c+tdoaTriad[0].anchorPosition[0].z;
     pTagCrd->timestamp = clock_time();
 }
 

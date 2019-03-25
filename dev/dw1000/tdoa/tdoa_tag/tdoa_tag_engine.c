@@ -57,7 +57,7 @@ static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorC
             tdoa.idB = idB;
             setAnchorPosition(&posA, &tdoa.anchorPosition[0]);
             setAnchorPosition(&posB, &tdoa.anchorPosition[1]);
-            tdoa.distanceDiff = -distanceDiff;
+            tdoa.distanceDiff = distanceDiff;
         }
         else
         {
@@ -65,7 +65,7 @@ static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorC
             tdoa.idB = idA;
             setAnchorPosition(&posB, &tdoa.anchorPosition[0]);
             setAnchorPosition(&posA, &tdoa.anchorPosition[1]);
-            tdoa.distanceDiff = distanceDiff;
+            tdoa.distanceDiff = -distanceDiff;
         }
         // int64_t tof = tdoaStorageGetTimeOfFlight(anchorACtx, idB);
         // tdoa.distance = SPEED_OF_LIGHT * tof / UWB_TS_FREQ;
