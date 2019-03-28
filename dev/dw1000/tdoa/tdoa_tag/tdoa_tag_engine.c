@@ -51,15 +51,14 @@ static void enqueueTDOA(tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext
         point_t posA, posB;
         if (tdoaStorageGetAnchorPosition(&anchorACtx[i], &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
         {
-            uint8_t idA = tdoaStorageGetId(anchorACtx);
+            uint8_t idA = tdoaStorageGetId(&anchorACtx[i]);
             uint8_t idB = tdoaStorageGetId(anchorBCtx);
             tdoas[i].idA = idB;
             tdoas[i].idB = idA;
-            setAnchorPosition(&posA, &tdoas[i].anchorPosition[1]);
             setAnchorPosition(&posB, &tdoas[i].anchorPosition[0]);
+            setAnchorPosition(&posA, &tdoas[i].anchorPosition[1]);
             tdoas[i].distanceDiff = -distanceDiff[i];
-            tdoas[i].endOfLife = clock_time() + TDOA_EXPIRED;
-            printf("get the distance diff from  %d  and  %d  :::  %f\n", idB, idA, distanceDiff);
+            printf("get the distance diff from  %d  and  %d  :::  %f\n", idB, idA, -distanceDiff[i]);
         }
         else
         {
@@ -147,7 +146,7 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
     // An offset (updated for each call) is added to make sure we start at
     // different positions in the list and vary which candidate to choose
     int count = 0;
-    for (int i = offset; i < (remoteCount + offset), count < 3; i++)
+    for (int i = offset; (i < (remoteCount + offset)) && (count < 3); i++)
     {
         uint8_t index = i % remoteCount;
         const uint8_t candidateAnchorId = id[index];

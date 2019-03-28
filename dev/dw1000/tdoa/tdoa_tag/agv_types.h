@@ -100,8 +100,8 @@ typedef struct tdoaMeasurement_s {
   // float distance;
   uint8_t idA;
   uint8_t idB;
-  uint8_t used;
-  uint32_t endOfLife;
+//  uint8_t used;
+//  uint32_t endOfLife;
 } tdoaMeasurement_t;//默认idA小于idB,规范存储，减少重复。
 
 typedef tdoaMeasurement_t tdoaQueue_t[TDOA_QUEUE_LENTH];//理论上最多8个基站间的TDOA数据量为28.

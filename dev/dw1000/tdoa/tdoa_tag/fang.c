@@ -38,7 +38,7 @@ bool fangGetTdoaMeasurement(tdoaMeasurement_t* tdoa)
         if(filterTdoaMeasurement(&tdoa[i]))
             createTdoaMeasurement(&tdoa[i], &tdoaTriad[i]);
         else{
-            printf("filterTdoaMeasurement: tdoa[%d]被过滤。", i);
+            printf("filterTdoaMeasurement: tdoa[%d] is filtered.\n", i);
             return false;
         }
             
@@ -53,9 +53,6 @@ bool fangGetTdoaMeasurement(tdoaMeasurement_t* tdoa)
 void getAnchorDistances(void)
 {
      uint8_t id1, id2, id3, id4;
-    // tdoaAnchorContext_t t2, t3, t4;
-    // uint32_t nowms = clock_time();
-    // int64_t tof23, tof24, tof34;
     point_t *a1, *a2, *a3, *a4, v12, v13, v14, v23, v24, v34;
     float D12, D13, D14, D23, D24, D34;
     
@@ -83,66 +80,6 @@ void getAnchorDistances(void)
     distances[2][2] = D34;
 
     id1 = tdoaTriad[0].idA, id2 = tdoaTriad[0].idB, id3 = tdoaTriad[1].idB, id4 = tdoaTriad[2].idB;
-    printf("id1 = %d, id2 = %d, id3 = %d, id4 = %d\n", id1, id2, id3, id4);
-//    printf("one anchor(%f,%f)\n",&tdoaTriad[0].anchorPosition[0].x,&tdoaTriad[0].anchorPosition[0].y);
-//    printf("D12 = %f,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
-
-    // int i;
-	// for(i = 0; i < 3; i++){
-	// 	tdoaMeasurement_t* t = &tdoaTriad[i];
-	// 	printf("tdoaTriad[%d]: idA=%d,idB=%d,distanceDiff=%f\n",i,t->idA,t->idB,t->distanceDiff);
-	// }
-	// tdoaTimeOfFlight_t *atof2, *atof3, *atof4;
-	// if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)){
-	// 	atof2 = t2.anchorInfo->tof;
-	// 	for(i = 0; i < 16; i++){
-	// 		if(atof2[i].id != 0)
-	// 			printf("tof of id%d and id%d is %lld, endoflife = %u, now = %u\n",id2, (unsigned)atof2[i].id, atof2[i].tof, atof2[i].endOfLife, clock_time());
-	// 		}
-	// }
-	// if(tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
-	// 	atof3 = t3.anchorInfo->tof;
-	// 	for(i = 0; i < 16; i++){
-	// 		if(atof3[i].id != 0)
-	// 			printf("tof of id%d and id%d is %lld, endoflife = %u, now = %u\n",id3, (unsigned)atof3[i].id, atof3[i].tof, atof3[i].endOfLife, clock_time());
-	// 		}
-	// }
-	// if(tdoaStorageGetAnchorCtx(anchorStorage, id4, nowms, &t4)){
-	// 	atof4 = t4.anchorInfo->tof;
-	// 	for(i = 0; i < 16; i++){
-	// 		if(atof4[i].id != 0)
-	// 			printf("tof of id%d and id%d is %lld, endoflife = %u, now = %u\n",id4, (unsigned)atof4[i].id, atof4[i].tof, atof4[i].endOfLife, clock_time());
-	// 	}
-	// }
-
-    // if(tdoaStorageGetAnchorCtx(anchorStorage, id2, nowms, &t2)){
-    // 	tof23 = tdoaStorageGetTimeOfFlight(&t2, id3);
-    // 	tof24 = tdoaStorageGetTimeOfFlight(&t2, id4);
-    // }
-    // if(tdoaStorageGetAnchorCtx(anchorStorage, id3, nowms, &t3)){
-	// 	if(tof23 == 0)
-	// 		tof23 = tdoaStorageGetTimeOfFlight(&t3, id2);
-	// 	tof34 = tdoaStorageGetTimeOfFlight(&t3, id4);
-    // }
-    // if(((tof24 == 0) || (tof34 == 0)) && tdoaStorageGetAnchorCtx(anchorStorage, id4, nowms, &t4)){
-	// 	tof24 = tdoaStorageGetTimeOfFlight(&t4, id2);
-	// 	tof34 = tdoaStorageGetTimeOfFlight(&t4, id3);
-	// }
-    // printf("tof23=%lld, tof24 = %lld, tof34 = %lld\n",tof23,tof24, tof34);
-	// if((tof23 != 0) && (tof24 != 0) && (tof34 != 0)){
-	// 	D12 = tdoaTriad[0].distance, D13 = tdoaTriad[1].distance, D14 = tdoaTriad[2].distance;
-	// 	D23 = SPEED_OF_LIGHT * tof23 / UWB_TS_FREQ;
-	// 	D24 = SPEED_OF_LIGHT * tof24 / UWB_TS_FREQ;
-	// 	D34 = SPEED_OF_LIGHT * tof34 / UWB_TS_FREQ;
-
-	// 	distances[0][0] = D12, distances[0][1] = D13, distances[0][2] = D14;
-	// 	distances[1][1] = D23,distances[1][2] = D24;
-	// 	distances[2][2] = D34;
-
-	// 	printf("D12 = %f,D13 = %f,D14 = %f, D23 = %f, D24 = %f, D34 = %f\n",D12,D13,D14,D23,D24,D34);
-	// 	return true;
-	// }
-	// return false;
 }
 
 /*
@@ -173,7 +110,6 @@ void createInnerAxis()
     
     //判断从基站4的z轴坐标正负性。
     *z4 = judgeZAxis() ? *z4 : -(*z4);
-//    printf("anchor2(%f,0,0),anchor3(%f,%f,0),anchor4(%f,%f,%f)\n",*x2,*x3,*y3,*x4,*y4,*z4);
 }
 
 /*
@@ -273,7 +209,7 @@ void changeAxisFromInnerToOuter(point_t* pTagCrd)
     x3i = innerAxisQuad[2].x, y3i = innerAxisQuad[2].y;
     x4i = innerAxisQuad[3].x, y4i = innerAxisQuad[3].y, z4i = innerAxisQuad[3].z;
     xi = innerAxisQuad[4].x, yi = innerAxisQuad[4].y, zi = innerAxisQuad[4].z;
-    printf("x2i=%f,x3i=%f,y3i=%f,x4i=%f,y4i=%f,z4i=%f,xi=%f,yi=%f,zi=%f\n",x2i,x3i,y3i,x4i,y4i,z4i,xi,yi,zi);
+//    printf("x2i=%f,x3i=%f,y3i=%f,x4i=%f,y4i=%f,z4i=%f,xi=%f,yi=%f,zi=%f\n",x2i,x3i,y3i,x4i,y4i,z4i,xi,yi,zi);
     
     c = zi/z4i;
     b = (yi-y4i*c)/y3i;
@@ -283,35 +219,13 @@ void changeAxisFromInnerToOuter(point_t* pTagCrd)
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[0].anchorPosition[1], &v12);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[1].anchorPosition[1], &v13);
     createVector(&tdoaTriad[0].anchorPosition[0], &tdoaTriad[2].anchorPosition[1], &v14);
-    printf("v12(%f,%f,%f),v13(%f,%f,%f),v14(%f,%f,%f)\n",v12.x,v12.y,v12.z,v13.x,v13.y,v13.z,v14.x,v14.y,v14.z);
+//    printf("v12(%f,%f,%f),v13(%f,%f,%f),v14(%f,%f,%f)\n",v12.x,v12.y,v12.z,v13.x,v13.y,v13.z,v14.x,v14.y,v14.z);
     
     float array[3] = {0};
     pTagCrd->x = v12.x*a+v13.x*b+v14.x*c+tdoaTriad[0].anchorPosition[0].x;
     pTagCrd->y = v12.y*a+v13.y*b+v14.y*c+tdoaTriad[0].anchorPosition[0].y;
     pTagCrd->z = v12.z*a+v13.z*b+v14.z*c+tdoaTriad[0].anchorPosition[0].z;
     pTagCrd->timestamp = clock_time();
-}
-
-static int getAnchorIdIndex(uint8_t id)
-{
-    int i;
-    for(i = 0; i < TDOA_ANCHOR_COUNT; i++){
-        if(ids[i] == id)
-            return i;   
-    }
-    return -1;
-}
-
-static int createAnchorIdIndex(uint8_t id)
-{
-    int i;
-    for(i = 0; i < TDOA_ANCHOR_COUNT; i++){
-        if(ids[i] == 0){
-        	ids[i] = id;
-        	return i;
-        }
-    }
-    return -1;
 }
 
 static void createTdoaMeasurement(tdoaMeasurement_t* src, tdoaMeasurement_t* dst)
@@ -322,7 +236,7 @@ static void createTdoaMeasurement(tdoaMeasurement_t* src, tdoaMeasurement_t* dst
 //    dst->distance = src->distance;
     dst->idA = src->idA;
     dst->idB = src->idB;
-    dst->endOfLife = src->endOfLife;
+//    dst->endOfLife = src->endOfLife;
 }
 
 static void inverseTdoaMeasurement(tdoaMeasurement_t* t)

@@ -115,19 +115,31 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
   // 粗暴设置基站位置
   if (anchorId == 1)
   {
-    tdoaStorageSetAnchorPosition(&anchorCtx, 1.293, 0.0, -0.574);
+     tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 2.473);
   }
   else if(anchorId == 2)
   {
-    tdoaStorageSetAnchorPosition(&anchorCtx, 1.293, 3.2, 0.0);
+     tdoaStorageSetAnchorPosition(&anchorCtx, 5.808, 0.0, 0.328);
+  }
+  else if(anchorId == 3)
+  {
+	 tdoaStorageSetAnchorPosition(&anchorCtx, 5.808, 0.0, 2.453);
   }
   else if(anchorId == 10)
   {
-	  tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.551);
+	 tdoaStorageSetAnchorPosition(&anchorCtx, 0.0, 0.0, 0.291);
+  }
+  else if(anchorId == 11)
+  {
+	 tdoaStorageSetAnchorPosition(&anchorCtx, 1.333, 5.633, 0.332);
+  }
+  else if(anchorId == 12)
+  {
+  	 tdoaStorageSetAnchorPosition(&anchorCtx, 4.393, 5.633, 0.348);
   }
   else
   {
-	 tdoaStorageSetAnchorPosition(&anchorCtx, 1.293, 1.6, 0.0);
+	 tdoaStorageSetAnchorPosition(&anchorCtx, 2.873, 5.633, 2.545);
   }
 
   // 更新数据
@@ -185,7 +197,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
     changeAxisFromInnerToOuter(&tagCrd);
     printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
   }else{
-    printf("fangGetTdoaMeasurement: tdoa三元组被过滤或出了其他问题.");
+    printf("fangGetTdoaMeasurement: tdoa filtered or other error.\n");
   }
   // if(idx != -1){
   //   fangPutMatrix(queue, idx);
