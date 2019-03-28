@@ -43,61 +43,31 @@ uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
     return fullTimeStamp & TRUNCATE_TO_ANCHOR_TS_BITMAP;
 }
 
-static void enqueueTDOA(const tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, const double distanceDiff, tdoaEngineState_t *engineState)
+static void enqueueTDOA(tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, double* distanceDiff, tdoaEngineState_t *engineState)
 {
-    tdoaMeasurement_t tdoa;
-    point_t posA, posB;
-    if (tdoaStorageGetAnchorPosition(anchorACtx, &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
-    {
-        uint8_t idA = tdoaStorageGetId(anchorACtx);
-        uint8_t idB = tdoaStorageGetId(anchorBCtx);
-        if (idA < idB)
+    int i;
+    tdoaMeasurement_t tdoas[3];
+    for(i = 0; i < 3; i++){
+        point_t posA, posB;
+        if (tdoaStorageGetAnchorPosition(&anchorACtx[i], &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
         {
-            tdoa.idA = idA;
-            tdoa.idB = idB;
-            setAnchorPosition(&posA, &tdoa.anchorPosition[0]);
-            setAnchorPosition(&posB, &tdoa.anchorPosition[1]);
-            tdoa.distanceDiff = distanceDiff;
+            uint8_t idA = tdoaStorageGetId(anchorACtx);
+            uint8_t idB = tdoaStorageGetId(anchorBCtx);
+            tdoas[i].idA = idB;
+            tdoas[i].idB = idA;
+            setAnchorPosition(&posA, &tdoas[i].anchorPosition[1]);
+            setAnchorPosition(&posB, &tdoas[i].anchorPosition[0]);
+            tdoas[i].distanceDiff = -distanceDiff[i];
+            tdoas[i].endOfLife = clock_time() + TDOA_EXPIRED;
+            printf("get the distance diff from  %d  and  %d  :::  %f\n", idB, idA, distanceDiff);
         }
         else
         {
-            tdoa.idA = idB;
-            tdoa.idB = idA;
-            setAnchorPosition(&posB, &tdoa.anchorPosition[0]);
-            setAnchorPosition(&posA, &tdoa.anchorPosition[1]);
-            tdoa.distanceDiff = -distanceDiff;
+            return;
         }
-        // int64_t tof = tdoaStorageGetTimeOfFlight(anchorACtx, idB);
-        // tdoa.distance = SPEED_OF_LIGHT * tof / UWB_TS_FREQ;
-        tdoa.endOfLife = clock_time() + TDOA_EXPIRED;
-
-        printf("get the distance diff from  %d  and  %d  :::  %f\n", idA, idB, distanceDiff);
-        engineState->sendTdoaToEstimator(&tdoa);
+        
     }
-    // tdoaStats_t *stats = &engineState->stats;
-
-    // tdoaMeasurement_t tdoa = {tdoa.stdDev = MEASUREMENT_NOISE_STD,
-    // 						  tdoa.distanceDiff = distanceDiff};
-    // if (tdoaStorageGetAnchorPosition(anchorACtx, &tdoa.anchorPosition[0]) && tdoaStorageGetAnchorPosition(anchorBCtx, &tdoa.anchorPosition[1]))
-    // {e:sameSlot = 3, firstEmptySlot = 5, oldestSlot = 0␊
-    //     // stats->packetsToEstimator++;
-    //     engineState->sendTdoaToEstimator(&tdoa);
-
-    //     uint8_t idA = tdoaStorageGetId(anchorACtx);
-    //     uint8_t idB = tdoaStorageGetId(anchorBCtx);
-
-    //     int diff1 = distanceDiff;
-    //     int diff2 = (distanceDiff - diff1) * 1e9;
-    //     printf("get the distance diff from  %d  and  %d  :::  %d.%09d\n", idA, idB, diff1, diff2);
-    //     // if (idA == stats->anchorId && idB == stats->remoteAnchorId)
-    //     // {
-    //     //     stats->tdoa = distanceDiff;
-    //     // }
-    //     // if (idB == stats->anchorId && idA == stats->remoteAnchorId)
-    //     // {
-    //     //     stats->tdoa = -distanceDiff;
-    //     // }
-    // }
+    engineState->sendTdoaToEstimator(tdoas);
 }
 
 static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
@@ -125,29 +95,34 @@ static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t 
     return sampleIsReliable;
 }
 
-static int64_t calcTDoA(const tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
-{
-    const uint8_t otherAnchorId = tdoaStorageGetId(otherAnchorCtx);
+static int64_t calcTDoA(const double locodeckTsFreq, double* tdoaDistDiff, const tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
+{   
+    int i;
+    for(i = 0; i < 3; i++){
+        const uint8_t otherAnchorId = tdoaStorageGetId(otherAnchorCtx+i);
 
-    const int64_t tof_Ar_to_An_in_cl_An = tdoaStorageGetTimeOfFlight(anchorCtx, otherAnchorId);
-    const int64_t rxAr_by_An_in_cl_An = tdoaStorageGetRemoteRxTime(anchorCtx, otherAnchorId);
-    const double clockCorrection = tdoaStorageGetClockCorrection(anchorCtx);
+        const int64_t tof_Ar_to_An_in_cl_An = tdoaStorageGetTimeOfFlight(anchorCtx, otherAnchorId);
+        const int64_t rxAr_by_An_in_cl_An = tdoaStorageGetRemoteRxTime(anchorCtx, otherAnchorId);
+        const double clockCorrection = tdoaStorageGetClockCorrection(anchorCtx);
 
-    const int64_t rxAr_by_T_in_cl_T = tdoaStorageGetRxTime(otherAnchorCtx);
+        const int64_t rxAr_by_T_in_cl_T = tdoaStorageGetRxTime(otherAnchorCtx+i);
 
-    const int64_t delta_txAr_to_txAn_in_cl_An = (tof_Ar_to_An_in_cl_An + truncateToAnchorTimeStamp(txAn_in_cl_An - rxAr_by_An_in_cl_An));
-    const int64_t timeDiffOfArrival_in_cl_T = truncateToAnchorTimeStamp(rxAn_by_T_in_cl_T - rxAr_by_T_in_cl_T) - delta_txAr_to_txAn_in_cl_An * clockCorrection;
+        const int64_t delta_txAr_to_txAn_in_cl_An = (tof_Ar_to_An_in_cl_An + truncateToAnchorTimeStamp(txAn_in_cl_An - rxAr_by_An_in_cl_An));
+        const int64_t timeDiffOfArrival_in_cl_T = truncateToAnchorTimeStamp(rxAn_by_T_in_cl_T - rxAr_by_T_in_cl_T) - delta_txAr_to_txAn_in_cl_An * clockCorrection;
 
-    return timeDiffOfArrival_in_cl_T;
+        tdoaDistDiff[i] = SPEED_OF_LIGHT * timeDiffOfArrival_in_cl_T / locodeckTsFreq;
+    }
+    // return timeDiffOfArrival_in_cl_T;
 }
 
-static double calcDistanceDiff(const tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T, const double locodeckTsFreq)
+static double calcDistanceDiff(double* tdoaDistDiff, tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T, const double locodeckTsFreq)
 {
-    const int64_t tdoa = calcTDoA(otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
-    return SPEED_OF_LIGHT * tdoa / locodeckTsFreq;
+    // const int64_t tdoa = calcTDoA(otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
+    // return SPEED_OF_LIGHT * tdoa / locodeckTsFreq;
+    calcTDoA(locodeckTsFreq, tdoaDistDiff, otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
 }
 
-static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx)
+static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext_t *otherAnchorCtxs, const tdoaAnchorContext_t *anchorCtx)
 {
     static uint8_t seqNr[REMOTE_ANCHOR_DATA_COUNT];
     static uint8_t id[REMOTE_ANCHOR_DATA_COUNT];
@@ -171,21 +146,27 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
     // Loop over the candidates and pick the first one that is useful
     // An offset (updated for each call) is added to make sure we start at
     // different positions in the list and vary which candidate to choose
-    for (int i = offset; i < (remoteCount + offset); i++)
+    int count = 0;
+    for (int i = offset; i < (remoteCount + offset), count < 3; i++)
     {
         uint8_t index = i % remoteCount;
         const uint8_t candidateAnchorId = id[index];
-        if (tdoaStorageGetCreateAnchorCtx(engineState->anchorInfoArray, candidateAnchorId, now_ms, otherAnchorCtx))
+        if (tdoaStorageGetCreateAnchorCtx(engineState->anchorInfoArray, candidateAnchorId, now_ms, &otherAnchorCtxs[count]))
         {
-            if (seqNr[index] == tdoaStorageGetSeqNr(otherAnchorCtx) && tdoaStorageGetTimeOfFlight(anchorCtx, candidateAnchorId))
+            if (seqNr[index] == tdoaStorageGetSeqNr(&otherAnchorCtxs[count]) && tdoaStorageGetTimeOfFlight(anchorCtx, candidateAnchorId))
             {
-                return true;
+                //return true;
+                count++;
             }
         }
     }
-
-    otherAnchorCtx->anchorInfo = 0;
-    return false;
+    if(count == 3){
+        return true;
+    }
+    else{
+        // otherAnchorCtxs->anchorInfo = 0;
+        return false;
+    }
 }
 
 void tdoaEngineGetAnchorCtxForPacketProcessing(tdoaEngineState_t *engineState, const uint8_t anchorId, const uint32_t currentTime_ms, tdoaAnchorContext_t *anchorCtx)
@@ -210,15 +191,16 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
     {
         // engineState->stats.timeIsGood++;
         printf("TimeIsGood\n");
-        tdoaAnchorContext_t otherAnchorCtx;
-        if (findSuitableAnchor(engineState, &otherAnchorCtx, anchorCtx))
+        tdoaAnchorContext_t otherAnchorCtxs[3];
+        if (findSuitableAnchor(engineState, otherAnchorCtxs, anchorCtx))
         {
 //            printf("found suitable anchor\n");
             // engineState->stats.suitableDataFound++;
             // 计算距离差
-            double tdoaDistDiff = calcDistanceDiff(&otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
+            double tdoaDistDiffs[3];
+            calcDistanceDiff(tdoaDistDiffs, otherAnchorCtxs, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
             // 根据新的tdoa数据更新位置
-            enqueueTDOA(&otherAnchorCtx, anchorCtx, tdoaDistDiff, engineState);
+            enqueueTDOA(otherAnchorCtxs, anchorCtx, tdoaDistDiffs, engineState);
         }
     }
 }

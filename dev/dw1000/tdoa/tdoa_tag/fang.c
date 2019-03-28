@@ -1,17 +1,11 @@
 #include "fang.h"
 #include <math.h>
 
-static tdoaQueue_t queue;
-
-static uint8_t ids[TDOA_ANCHOR_COUNT] = {0};
-static int packets[TDOA_ANCHOR_COUNT] = {0};
-
 static tdoaMeasurement_t tdoaTriad[3];
 static float distances[3][3];
 static point_t innerAxisQuad[5];//四个基站加一个标签的内坐标轴坐标。
 
-static int getAnchorIdIndex(uint8_t id);
-static int createAnchorIdIndex(uint8_t id);
+static bool filterTdoaMeasurement(tdoaMeasurement_t* m);
 
 static void createTdoaMeasurement(tdoaMeasurement_t* src, tdoaMeasurement_t* dst);
 static void inverseTdoaMeasurement(tdoaMeasurement_t* t);
@@ -26,7 +20,7 @@ static void createVector(point_t* pstart, point_t* pend, point_t* vector);
 /*
  * 过滤不正常tdoa数据。
  */
-bool filterTdoaMeasurement(tdoaMeasurement_t* m)
+static bool filterTdoaMeasurement(tdoaMeasurement_t* m)
 {
     point_t v;
     createVector(&m->anchorPosition[0], &m->anchorPosition[1], &v);
@@ -35,98 +29,22 @@ bool filterTdoaMeasurement(tdoaMeasurement_t* m)
 }
 
 /*
- * 将收到的tdoaMeasurement数据放入数组，更新标签从相应基站收包数。
+ * 复制tdoa三元组。
  */
-int fangPutTdoaMeasurement(tdoaMeasurement_t* measure)
-{ 
-    int sameSlot = -1, firstEmptySlot = -1, expiredSlot = -1;
-    uint8_t idA = measure->idA, idB = measure->idB;
-    uint32_t expiredTime = clock_time();
-    int idxA, idxB;
-    int i;
-
-    // 寻找在queue中可以存放新的tdoa数据的位置
-    for(i = 0; i < TDOA_QUEUE_LENTH; i++){
-        if(((queue[i].used & 1) == 0)){
-            if(firstEmptySlot == -1)
-                firstEmptySlot = i;
-        }else if(queue[i].endOfLife < expiredTime){
-            //同时更新ids数组及packets数组。
-            int idxC, idxD;
-            if((idxC = getAnchorIdIndex(queue[i].idA)) != -1){
-                packets[idxC]--;
-            }
-            else
-                printf("Error: getAnchorIdIndex return -1.\n");
-
-            if((idxD = getAnchorIdIndex(queue[i].idB)) != -1)
-                packets[idxD]--;
-            else
-                printf("Error: getAnchorIdIndex return -1.\n");
-
-            memset(&queue[i], 0, sizeof(tdoaMeasurement_t));
-            expiredSlot = i;
-        }else if((queue[i].idA == idA) && (queue[i].idB == idB)){
-            sameSlot = i;
-        }
-    }
-
-    if(sameSlot != -1){
-        createTdoaMeasurement(measure, &queue[sameSlot]);
-        idxA = getAnchorIdIndex(idA);
-        idxB = getAnchorIdIndex(idB);
-    }else{
-        if(firstEmptySlot != -1){
-            createTdoaMeasurement(measure, &queue[firstEmptySlot]);
-            queue[firstEmptySlot].used |= 1;
-        }else{
-            createTdoaMeasurement(measure, &queue[expiredSlot]);
-            queue[expiredSlot].used |= 1;
-        }
-
-        //同时更新ids数组及packets数组。
-		if((idxA = getAnchorIdIndex(idA)) == -1){
-			if((idxA = createAnchorIdIndex(idA)) == -1)
-				printf("Error: createAnchorIdIndex return -1.\n");
-
-		}
-		if((idxB = getAnchorIdIndex(idB)) == -1){
-			if((idxB = createAnchorIdIndex(idB)) == -1)
-				printf("Error: createAnchorIdIndex return -1.\n");
-		}
-
-    	packets[idxA]++;
-    	packets[idxB]++;
-    } 
-    for(i = 0; i < 8; i++){
-    	if((queue[i].used & 1) == 1){
-    		printf("queue: idA is %d, idB is %d\n",queue[i].idA,queue[i].idB);
-    	}
-    }
-
-    return (packets[idxA] >= 3) ? idxA : ((packets[idxB] >= 3) ? idxB : -1);
-}
-
-/*
- * 从队列中取出三个TDOA数据，一个主基站，三个从基站。
- */
-void fangGetTdoaMeasurement(int idx)
+bool fangGetTdoaMeasurement(tdoaMeasurement_t* tdoa)
 {
-    uint8_t id = ids[idx];
-    int index, count = 0;
-    srand(clock_time());
-    int offset = rand() % TDOA_QUEUE_LENTH;
-    for(index = offset; index < TDOA_QUEUE_LENTH + offset, count < 3; index++){
-    	int i = index % TDOA_QUEUE_LENTH;
-        if(((queue[i].used & 1) == 1) && (queue[i].idA == id || queue[i].idB == id)){
-            createTdoaMeasurement(&queue[i], &tdoaTriad[count]);
-            if(queue[i].idB == id)
-                inverseTdoaMeasurement(&tdoaTriad[count]);
-            printf("idA:%d, idB:%d, tdoa:%f \n",tdoaTriad[count].idA,tdoaTriad[count].idB,tdoaTriad[count].distanceDiff);
-            count++;
+    int i;
+    for(i = 0; i < 3; i++){
+        if(filterTdoaMeasurement(&tdoa[i]))
+            createTdoaMeasurement(&tdoa[i], &tdoaTriad[i]);
+        else{
+            printf("filterTdoaMeasurement: tdoa[%d]被过滤。", i);
+            return false;
         }
+            
+        
     }
-    printf("Debug: fangGetTdoaMeasurement has executed, count = %d\n", count);
+    return true;
 }
 
 /*

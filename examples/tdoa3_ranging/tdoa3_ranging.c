@@ -27,7 +27,7 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     static uwbConfig_t *uwbConfig;
     static dwDevice_t *dev;
     static uint32_t timeout_ms;
-    static uint32_t timeout = 30;
+    // static uint32_t timeout = 30;
     static struct etimer et;
     PROCESS_BEGIN();
     dw1000_configure(&radio_config);
@@ -37,7 +37,7 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     timeout_ms = tdoa3UwbEvent(dev);
     while (1)
     {
-        etimer_set(&et, timeout);
+        etimer_set(&et, timeout_ms);
         PROCESS_YIELD_UNTIL(etimer_expired(&et));
         printf("start: %d\n", clock_time());
         printf("timeout_ms: %u\n", timeout_ms);

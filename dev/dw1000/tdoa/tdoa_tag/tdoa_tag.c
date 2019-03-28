@@ -102,6 +102,9 @@ void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t
   // uint32_t remoteTx = packet->header.txTimeStamp;
   const int64_t txAn_in_cl_An = packet->header.txTimeStamp;
   uint8_t seqNr = packet->header.seq;
+  
+  //统计收包率
+  printf("Debug: get packet from %d, seqNr=%d, now is %u\n", anchorId, seqNr, clock_time());
 
   // process anchor packet in tag
   tdoaAnchorContext_t anchorCtx;
@@ -172,25 +175,17 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
   // printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
 	// 	  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
 	// 										(int)(state.position.z*1000));
-  tdoaMeasurement_t* measureA = tdoaMeasurement;
-  int idx;
-  if(filterTdoaMeasurement(measureA)){
-      idx = fangPutTdoaMeasurement(measureA);
-      if(idx != -1){
-        fangGetTdoaMeasurement(idx);
-        getAnchorDistances();
-        createInnerAxis();
-        calcTagInnerCoodinate1();
-        changeAxisFromInnerToOuter(&tagCrd);
-        printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-        calcTagInnerCoodinate2();
-        changeAxisFromInnerToOuter(&tagCrd);
-        printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-      }else{
-        printf("Debug: the idx is -1.\n");
-      }
+  if(fangGetTdoaMeasurement(tdoaMeasurement)){
+    getAnchorDistances();
+    createInnerAxis();
+    calcTagInnerCoodinate1();
+    changeAxisFromInnerToOuter(&tagCrd);
+    printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+    calcTagInnerCoodinate2();
+    changeAxisFromInnerToOuter(&tagCrd);
+    printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
   }else{
-    printf("Debug: the todaMeasurement is filtered.\n");
+    printf("fangGetTdoaMeasurement: tdoa三元组被过滤或出了其他问题.");
   }
   // if(idx != -1){
   //   fangPutMatrix(queue, idx);

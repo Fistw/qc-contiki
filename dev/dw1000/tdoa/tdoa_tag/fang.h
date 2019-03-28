@@ -5,17 +5,9 @@
 #include "tdoa_tag_engine.h"
 
 /*
- * 过滤不正常tdoa数据。
+ * 复制tdoa三元组.
  */
-bool filterTdoaMeasurement(tdoaMeasurement_t* m);
-/*
- * 将收到的tdoaMeasurement数据放入数组，更新标签从相应基站收包数。
- */
-int fangPutTdoaMeasurement(tdoaMeasurement_t* measure);
-/*
- * 从队列中取出三个TDOA数据，一个主基站，三个从基站。
- */
-void fangGetTdoaMeasurement(int idx);
+bool fangGetTdoaMeasurement(tdoaMeasurement_t* tdoa);
 /*
  * 获取基站测距。
  */
