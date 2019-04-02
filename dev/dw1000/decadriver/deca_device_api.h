@@ -603,6 +603,8 @@ void dwt_setdelayedtrxtime(uint32 starttime) ;
  */
 void dwt_readtxtimestamp(uint8 * timestamp);
 
+void dwt_readtxrawst(uint8* tx_rawst);
+
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn dwt_readtxtimestamphi32()
  *
@@ -643,7 +645,7 @@ uint32 dwt_readtxtimestamplo32(void);
  */
 void dwt_readrxtimestamp(uint8 * timestamp);
 
-void dwt_readrxrawtime(uint8 * timestamp);
+void dwt_readrxrawst(uint8 * timestamp);
 
 void dwt_readrxantennadelay(uint8 * rxantenna);
 

@@ -801,6 +801,16 @@ void dwt_readtxtimestamp(uint8 * timestamp)
     dwt_readfromdevice(TX_TIME_ID, TX_TIME_TX_STAMP_OFFSET, TX_TIME_TX_STAMP_LEN, timestamp) ; // Read bytes directly into buffer
 }
 
+void dwt_readtxrawst(uint8* tx_rawst)
+{
+    dwt_readfromdevice(TX_TIME_ID, TX_TIME_TX_RAWST_OFFSET, TX_TIME_TX_STAMP_LEN, tx_rawst);
+}
+
+void dwt_readtxantennadelay(uint8 * txantenna)
+{
+	dwt_readfromdevice(TX_ANTD_ID, TX_ANTD_OFFSET, 2, txantenna);
+}
+
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn dwt_readtxtimestamphi32()
  *
@@ -850,9 +860,9 @@ void dwt_readrxtimestamp(uint8 * timestamp)
     dwt_readfromdevice(RX_TIME_ID, RX_TIME_RX_STAMP_OFFSET, RX_TIME_RX_STAMP_LEN, timestamp) ; // Get the adjusted time of arrival
 }
 
-void dwt_readrxrawtime(uint8 * rawtime)
+void dwt_readrxrawst(uint8 * rx_rawst)
 {
-	dwt_readfromdevice(RX_TIME_ID, RX_TIME_FP_RAWST_OFFSET, RX_TIME_RX_STAMP_LEN, rawtime);
+	dwt_readfromdevice(RX_TIME_ID, RX_TIME_FP_RAWST_OFFSET, RX_TIME_RX_STAMP_LEN, rx_rawst);
 }
 
 void dwt_readrxantennadelay(uint8 * rxantenna)
@@ -860,10 +870,6 @@ void dwt_readrxantennadelay(uint8 * rxantenna)
 	dwt_readfromdevice(LDE_IF_ID, LDE_RXANTD_OFFSET, 2, rxantenna);
 }
 
-void dwt_readtxantennadelay(uint8 * txantenna)
-{
-	dwt_readfromdevice(TX_ANTD_ID, TX_ANTD_OFFSET, 2, txantenna);
-}
 /*! ------------------------------------------------------------------------------------------------------------------
  * @fn dwt_readrxtimestamphi32()
  *

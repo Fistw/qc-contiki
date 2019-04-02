@@ -38,11 +38,13 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     while (1)
     {
         etimer_set(&et, timeout_ms);
+        printf("Before etimer_expired ::: %u\n", clock_time());
         PROCESS_YIELD_UNTIL(etimer_expired(&et));
-        printf("start: %d\n", clock_time());
-        printf("timeout_ms: %u\n", timeout_ms);
+        printf("After etimer_expired ::: %u\n", clock_time());
+        // printf("start: %d\n", clock_time());
+        printf("timeout_ms ::: %u\n", timeout_ms);
         timeout_ms = tdoa3UwbEvent(dev);
-        printf("end: %d\n", clock_time());
+        // printf("end: %d\n", clock_time());
     }
     PROCESS_END();
 }

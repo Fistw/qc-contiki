@@ -99,7 +99,7 @@ static bool wait_ack_txdone;
 static volatile bool tx_done; /* flag indicating the end of TX */
 
 static dwTime_t rxTime = {.full = 0};
-static dwTime_t regTxTime = {.full = 0};
+static dwTime_t tx_stamp = {.full = 0};
 /*---------------------------------------------------------------------------*/
 PROCESS(dw1000_process, "DW1000 driver");
 #if DEBUG
@@ -148,9 +148,12 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     // dw1000_range_reset();
     // rx_rng_ok_cb(cb_data);
     dwt_readrxtimestamp(rxTime.raw);
-    dwTime_t rawtime = {.full = 0};
-    dwt_readrxrawtime(rawtime.raw);
-    //printf("rawtime: %u, rxTime: %u, rawtime-rxTime: %u\n", rawtime.low32, rxTime.low32, rawtime.low32-rxTime.low32);
+    dwTime_t rx_rawst = {.full = 0};
+    dwt_readrxrawst(rx_rawst.raw);
+    uint16_t rxAntenna;
+    dwt_readrxantennadelay(&rxAntenna);
+    printf("rx_rawst:::%u, rxTime:::%u, antenna=rx_rawst-rxTime:::%u, rxAntenna:::%u\n", 
+            rx_rawst.low32, rxTime.low32, rx_rawst.low32-rxTime.low32, rxAntenna);
 #endif
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
@@ -214,8 +217,13 @@ static void
 tx_conf_cb(const dwt_cb_data_t *cb_data)
 {
 	printf("tx_conf_cb is called.\n");
-	dwt_readtxtimestamp(regTxTime.raw);
-	//printf("regTxTime: %u\n", regTxTime.low32);
+	dwt_readtxtimestamp(tx_stamp.raw);
+    dwTime_t tx_rawst = {.full = 0};
+    dwt_readtxrawst(tx_rawst.raw);
+    uint16_t txAntenna;
+    dwt_readtxantennadelay(&txAntenna);
+    printf("tx_stamp:::%u, tx_rawst:::%u, antenna=tx_stamp-tx_rawst:::%u, txAntenna:::%u\n",
+            tx_stamp.low32, tx_rawst.low32, tx_stamp.low32-tx_rawst.low32, txAntenna);
 	//printf("%d\n", cb_data->status);
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
@@ -565,7 +573,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 #if TDOA_DEV_TAG
         handleTagRxPacket(rxTime.low32, packetbuf_dataptr(), data_len);
 #else
-        handleRxPacket(rxTime.low32, packetbuf_dataptr(), data_len, regTxTime.low32); //data_len不包括2字节的crc
+        handleRxPacket(rxTime.low32, packetbuf_dataptr(), data_len, tx_stamp.low32); //data_len不包括2字节的crc
 #endif
         packetbuf_set_datalen(data_len);
 

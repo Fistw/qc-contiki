@@ -377,12 +377,7 @@ static bool emptyClockCorrectionBucket(anchorContext_t *anchorCtx)
 
     return true;
 }
-void doubleToInt(double a)
-{
-	int i1 = a;
-	int i2 = (a-i1)*1e9;
-	printf("%d.%09d\n",i1,i2);
-}
+
 static bool updateClockCorrection(anchorContext_t *anchorCtx, double clockCorrection)
 {
     const double diff = clockCorrection - anchorCtx->clockCorrection;
@@ -486,30 +481,19 @@ static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr,
 static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
 {
     const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
-    //printf("ID: %d\n", remoteAnchorId);
-
     ctx.anchorRxCount[remoteAnchorId]++;
     anchorContext_t *anchorCtx = getContext(remoteAnchorId);
     if (anchorCtx)
     {
-    	//printf("anchorCtx->clockCorrection: ");
-    	//doubleToInt(anchorCtx->clockCorrection);
     	const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
-
         uint32_t remoteTx = rangePacket->header.txTimeStamp;
         uint8_t remoteTxSeqNr = rangePacket->header.seq;
-        printf("remoteTx: %u, remoteSeq: %d\n", remoteTx, remoteTxSeqNr);
+        printf("Receive remoteId:::%d, remoteTx:::%u, remoteSeqNr:::%d\n", remoteAnchorId, remoteTx, remoteTxSeqNr);
 
         double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
-//        clockCorrection = 1;
-        int i1 = clockCorrection;
-        int i2 = (clockCorrection - i1) * 1000000000;
-        printf("clockCorrection: %d.%09d\n", i1, i2);
-
         if (updateClockCorrection(anchorCtx, clockCorrection))
         {
             anchorCtx->isDataGoodForTransmission = true;
-
             uint32_t remoteRx = 0;
             uint8_t remoteRxSeqNr = 0;
             bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
@@ -547,7 +531,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     }
 }
 
-void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t regTxTime)
+void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t tx_stamp)
 {
     static packet_t rxPacket;
     uint8_t *prxPacket = &rxPacket;
@@ -567,8 +551,7 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     	printf("Not a TDOA3 Packet.\n");
     	return;
     }
-    //printf("rxTime2: %u\n", rxTime);
-    //printf("regTxTime: %u, ctx.txTime: %u, regTxTime-ctx.txTime: %u\n", regTxTime, ctx.txTime, regTxTime-ctx.txTime);
+    printf("tx_stamp:::%u, ctx.txTime:::%u, tx_stamp-ctx.txTime:::%d\n", tx_stamp, ctx.txTime, tx_stamp-ctx.txTime);
     handleRangePacket(rxTime, &rxPacket);
     //   rxPacket.payload[0] = 0;
 
@@ -598,9 +581,7 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     	if(index != 0xff){
     		anchorContext_t* panchorCtx = &ctx.anchorCtx[index];
     	double dd = (double)panchorCtx->distance/(499.2e6*128)*299792458;
-		int i1 = dd;
-		int i2 = (dd-i1)*1e3;
-    	printf("anchorId: %d, distance: %u, %d.%d\n", panchorCtx->id, panchorCtx->distance,i1,i2);
+    	printf("anchorId:::%d, distance(tick):::%d, distance:::%lf\n", panchorCtx->id, panchorCtx->distance, dd);
     	}
     }
 }
@@ -647,7 +628,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
     // rangePacket->header.type already populated
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
-    printf("txTime: %u, seq: %d\n", ctx.txTime, ctx.seqNr);
+    printf("Transmite id:::%d, txTime:::%u, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
 
     uint8_t remoteAnchorCount = 0;
     uint8_t *anchorDataPtr = &rangePacket->remoteAnchorData;
