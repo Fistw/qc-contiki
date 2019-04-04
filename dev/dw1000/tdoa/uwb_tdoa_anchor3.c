@@ -43,8 +43,10 @@
 #define MAX_CLOCK_DEVIATION_SPEC 10e-6
 #define CLOCK_CORRECTION_FILTER 0.1d
 
-#define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC * 2)
-#define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC * 2)
+//#define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC * 2)
+//#define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC * 2)
+#define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC * 9)
+#define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC * 9)
 
 #define ANCHOR_STORAGE_COUNT 16
 #define REMOTE_TX_MAX_COUNT 8 // REMOTE_TX_MAX_COUNT < ANCHOR_STORAGE_COUNT
@@ -348,8 +350,8 @@ static double calculateClockCorrection(anchorContext_t *anchorCtx, int remoteTxS
     uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
     uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
 
-//    printf("tickCountRemote: %u, remoteTx: %u, anchorCtx->txTimeStamp: %u\n", tickCountRemote, remoteTx, anchorCtx->txTimeStamp);
-//    printf("tickCountLocal: %u, rx: %u, anchorCtx->rxTimeStamp: %u\n", tickCountLocal, rx, anchorCtx->rxTimeStamp);
+//    printf("tickCountRemote:::%u, remoteTx:::%u, anchorCtx->txTimeStamp:::%u\n", tickCountRemote, remoteTx, anchorCtx->txTimeStamp);
+//    printf("tickCountLocal:::%u, rx:::%u, anchorCtx->rxTimeStamp:::%u\n", tickCountLocal, rx, anchorCtx->rxTimeStamp);
 
     if (tickCountRemote != 0)
     {
@@ -381,35 +383,25 @@ static bool emptyClockCorrectionBucket(anchorContext_t *anchorCtx)
 static bool updateClockCorrection(anchorContext_t *anchorCtx, double clockCorrection)
 {
     const double diff = clockCorrection - anchorCtx->clockCorrection;
+    printf("clockCorrection(calc)=%lf, clockCorrection(stor)=%lf, diff=%lf\n", clockCorrection, anchorCtx->clockCorrection, diff);
     bool sampleIsAccepted = false;
-//    printf("clockCorrection: ");
-//    doubleToInt(clockCorrection);
-//    printf("anchoreCtx->clockCorrection: ");
-//    doubleToInt(anchorCtx->clockCorrection);
-//    printf("diff: ");
-//    doubleToInt(diff);
-//    printf("\n");
-    //if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE)
-    if(-6e-1 < diff && diff < 6e-1)
+
+    if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE)
     {
         // LP filter
         anchorCtx->clockCorrection = anchorCtx->clockCorrection * (1.0d - CLOCK_CORRECTION_FILTER) + clockCorrection * CLOCK_CORRECTION_FILTER;
 
         fillClockCorrectionBucket(anchorCtx);
         sampleIsAccepted = true;
-        //printf("sampleIsAccepted:%d\n", sampleIsAccepted);
+        printf("sampleIsAccepted!!!\n");
     }
     else
     {
         if (emptyClockCorrectionBucket(anchorCtx))
         {
-            //printf("emptyClockCorrectionBucket\n");
-        	//if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX)
-            if(1-2e-1 < clockCorrection && clockCorrection < 1+2e-1)
+        	if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX)
         	{
                 anchorCtx->clockCorrection = clockCorrection;
-                //printf("after-anchoreCtx->clockCorrection: ");
-                //doubleToInt(anchorCtx->clockCorrection);
             }
         }
     }
@@ -451,26 +443,15 @@ static bool extractFromPacket(const rangePacket3_t *rangePacket, uint32_t *remot
 static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
 { //chenxin:好像是计算基站0，1之间的tof，不过这样的话clockCorrection也就是基站0，1之间的了
     // Check that the remote received seq nr is our latest tx seq nr
-	//printf("remoteRxSeqNr: %d, ctx.seqNr: %d\n", remoteRxSeqNr, ctx.seqNr);
     if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d)
     {
         uint32_t localTime = rx - ctx.txTime;
         uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
         uint32_t distance = (localTime - remoteTime) / 2;
-//        printf("localTimerx: %u\n", rx);
-//        printf("localTimectx.txTime: %u\n", ctx.txTime);
-//        printf("remoteTimeremoteTx: %u\n", remoteTx);
-//        printf("remoteTimeremoteRx: %u\n", remoteRx);
-//        printf("localTime: %u, remoteTime: %u\n",localTime, remoteTime);
-        //printf("distance: %u\n", distance);
+        printf("localTx=%u, remoteRx=%u, remoteTx=%u, localRx=%u\n", ctx.txTime, remoteRx, remoteTx, rx);
+        printf("clockCorrection=%lf, distance=%u\n", anchorCtx->clockCorrection, distance);
 
         return distance & 0xfffful;
-//        if(distance > 16455)
-//        {
-//        	return distance-16455;
-//        }else{
-//        	return 16455-distance;
-//        }
     }
     else
     {
@@ -491,17 +472,18 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
         printf("Receive remoteId:::%d, remoteTx:::%u, remoteSeqNr:::%d\n", remoteAnchorId, remoteTx, remoteTxSeqNr);
 
         double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
+        printf("updateClockCorrection return False!!!\n");
         if (updateClockCorrection(anchorCtx, clockCorrection))
         {
+        	printf("updateClockCorrection return True!!!\n");
             anchorCtx->isDataGoodForTransmission = true;
             uint32_t remoteRx = 0;
             uint8_t remoteRxSeqNr = 0;
             bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
-            //printf("dataFound: %d\n", dataFound);
+            printf("dataFound is %d\n", dataFound);
             if (dataFound)
             {
                 uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
-                //printf("dist: %d\n", distance);
 
                 // TODO krri Remove outliers in distances
 //                if (distance > MIN_TOF)
@@ -512,11 +494,6 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
 //                    anchorCtx->distanceUpdateTime = clock_time();
 //                }
                 anchorCtx->distance = distance;
-                double dd = (double)distance/(499.2e6*128)*299792458;
-                int i1 = dd;
-                int i2 = (dd-i1)*1e3;
-                //printf("dist: %u, %d.%d\n", distance, i1,i2);
-                //   anchorCtx->distanceUpdateTime = xTaskGetTickCount();
                 anchorCtx->distanceUpdateTime = clock_time();
             }
         }
@@ -538,42 +515,15 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     int dataLength = data_len;
     for (int i = 0; i < data_len; i++)
     {
-    	//printf("%d ", packetbuf[i]);
         prxPacket[i] = packetbuf[i];
     }
-    //printf("\n");
-    //   dwTime_t rxTime = { .full = 0 };
-
-    //   dwGetRawReceiveTimestamp(dev, &rxTime);
-    // dwCorrectTimestamp(dev, &rxTime); //api
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
     {
     	printf("Not a TDOA3 Packet.\n");
     	return;
     }
-    printf("tx_stamp:::%u, ctx.txTime:::%u, tx_stamp-ctx.txTime:::%d\n", tx_stamp, ctx.txTime, tx_stamp-ctx.txTime);
+
     handleRangePacket(rxTime, &rxPacket);
-    //   rxPacket.payload[0] = 0;
-
-    //   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
-
-    //   if (dataLength == 0) {
-    //     return;
-    //   }
-
-    //   switch(rxPacket.payload[0]) {
-    //   case PACKET_TYPE_TDOA3:
-    //     handleRangePacket(rxTime.low32, &rxPacket);
-    //     break;
-    //   case SHORT_LPP:
-    //     if (rxPacket.destAddress[0] == ctx.anchorId) {
-    //       lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
-    //     }
-    //     break;
-    //   default:
-    //     // Do nothing
-    //     break;
-    //   }
 
     for(int i = 0; i < 256; i++)
     {
@@ -699,7 +649,7 @@ static void setTxData(dwDevice_t *dev)
 
     // LPP anchor position is currently sent in all packets
     // if (uwbConfig->positionEnabled)
-    // {
+    // {	anchorContext_t* panchorCtx = &ctx.anchorCtx[index];
     //     txPacket.payload[rangePacketSize + LPP_HEADER] = SHORT_LPP;
     //     txPacket.payload[rangePacketSize + LPP_TYPE] = LPP_SHORT_ANCHOR_POSITION;
 

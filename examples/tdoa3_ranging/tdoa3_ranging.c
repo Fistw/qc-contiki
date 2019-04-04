@@ -38,7 +38,7 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     while (1)
     {
         etimer_set(&et, timeout_ms);
-        printf("Before etimer_expired ::: %u\n", clock_time());
+        printf("\n\nBefore etimer_expired ::: %u\n", clock_time());
         PROCESS_YIELD_UNTIL(etimer_expired(&et));
         printf("After etimer_expired ::: %u\n", clock_time());
         // printf("start: %d\n", clock_time());

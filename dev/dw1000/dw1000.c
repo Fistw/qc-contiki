@@ -136,7 +136,7 @@ static radio_result_t dw1000_set_object(radio_param_t param, const void *src, si
 static void
 rx_ok_cb(const dwt_cb_data_t *cb_data)
 {
-	printf("rx_ok_cb is called.\n");
+	printf("\nrx_ok_cb is called.\n");
     /*LEDS_TOGGLE(LEDS_GREEN); */
 #if DW1000_RANGING_ENABLED
     // if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
@@ -148,12 +148,13 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     // dw1000_range_reset();
     // rx_rng_ok_cb(cb_data);
     dwt_readrxtimestamp(rxTime.raw);
-    dwTime_t rx_rawst = {.full = 0};
-    dwt_readrxrawst(rx_rawst.raw);
-    uint16_t rxAntenna;
-    dwt_readrxantennadelay(&rxAntenna);
-    printf("rx_rawst:::%u, rxTime:::%u, antenna=rx_rawst-rxTime:::%u, rxAntenna:::%u\n", 
-            rx_rawst.low32, rxTime.low32, rx_rawst.low32-rxTime.low32, rxAntenna);
+    printf("rxTime=%u\n", rxTime.low32);
+//    dwTime_t rx_rawst = {.full = 0};
+//    dwt_readrxrawst(rx_rawst.raw);
+//    uint16_t rxAntenna;
+//    dwt_readrxantennadelay(&rxAntenna);
+//    printf("rx_rawst:::%u, rxTime:::%u, antenna=rx_rawst-rxTime:::%u, rxAntenna:::%u\n",
+//            rx_rawst.low32, rxTime.low32, rx_rawst.low32-rxTime.low32, rxAntenna);
 #endif
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
@@ -218,12 +219,12 @@ tx_conf_cb(const dwt_cb_data_t *cb_data)
 {
 	printf("tx_conf_cb is called.\n");
 	dwt_readtxtimestamp(tx_stamp.raw);
-    dwTime_t tx_rawst = {.full = 0};
-    dwt_readtxrawst(tx_rawst.raw);
-    uint16_t txAntenna;
-    dwt_readtxantennadelay(&txAntenna);
-    printf("tx_stamp:::%u, tx_rawst:::%u, antenna=tx_stamp-tx_rawst:::%u, txAntenna:::%u\n",
-            tx_stamp.low32, tx_rawst.low32, tx_stamp.low32-tx_rawst.low32, txAntenna);
+//    dwTime_t tx_rawst = {.full = 0};
+//    dwt_readtxrawst(tx_rawst.raw);
+//    uint16_t txAntenna;
+//    dwt_readtxantennadelay(&txAntenna);
+//    printf("tx_stamp:::%u, tx_rawst:::%u, antenna=tx_stamp-tx_rawst:::%u, txAntenna:::%u\n",
+//            tx_stamp.low32, tx_rawst.low32, tx_stamp.low32-tx_rawst.low32, txAntenna);
 	//printf("%d\n", cb_data->status);
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
