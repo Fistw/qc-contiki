@@ -41,7 +41,7 @@ uint8_t dwStartTransmit(dwTime_t *txTime)
     dwt_setdelayedtrxtime(txTime->high32);
 
     /* 关闭智能功率调节 */
-    dwt_setsmarttxpower(0);
+    // dwt_setsmarttxpower(0);
 
     /* Radio starts listening certain delay (in UWB microseconds) after TX */
     dwt_setrxaftertxdelay(0);
