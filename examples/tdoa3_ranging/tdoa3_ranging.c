@@ -25,12 +25,17 @@ AUTOSTART_PROCESSES(&toda3_ranging);
 PROCESS_THREAD(toda3_ranging, ev, data)
 {
     static uwbConfig_t *uwbConfig;
+    // 设置发射功率：15db=0010,0000、33.5db=0001,1111
+    static dwt_txconfig_t txConfig = {.PGdly=0xC0, .power=0x20202020};
     static dwDevice_t *dev;
     static uint32_t timeout_ms;
     // static uint32_t timeout = 30;
     static struct etimer et;
     PROCESS_BEGIN();
     dw1000_configure(&radio_config);
+    /* 关闭智能功率调节 */
+    dwt_setsmarttxpower(0);
+    dwt_configuretxrf(&txConfig);
     printf("Process begin\n");
     uwbConfig = uwbGetConfig();
     tdoa3Init(uwbConfig);
