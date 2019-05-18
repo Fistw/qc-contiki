@@ -187,14 +187,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
   // printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
 	// 	  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
 	// 										(int)(state.position.z*1000));
-  if(fangGetTdoaMeasurement(tdoaMeasurement)){
-    getAnchorDistances();
-    createInnerAxis();
-    calcTagInnerCoodinate1();
-    changeAxisFromInnerToOuter(&tagCrd);
-    printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-    calcTagInnerCoodinate2();
-    changeAxisFromInnerToOuter(&tagCrd);
+  if(fang(tdoaMeasurement, &tagCrd)){
     printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
   }else{
     printf("fangGetTdoaMeasurement: tdoa filtered or other error.\n");

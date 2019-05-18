@@ -55,9 +55,9 @@ typedef struct attitude_s {
 struct vec3_s {
   uint32_t timestamp; // Timestamp when the data was computed
 
-  float x;
-  float y;
-  float z;
+  double x;
+  double y;
+  double z;
 };
 
 typedef struct vec3_s vector_t;
@@ -96,7 +96,7 @@ typedef struct quaternion_s {
 #define TDOA_ANCHOR_COUNT 8
 typedef struct tdoaMeasurement_s {
   point_t anchorPosition[2];
-  float distanceDiff;
+  double distanceDiff;
   // float distance;
   uint8_t idA;
   uint8_t idB;

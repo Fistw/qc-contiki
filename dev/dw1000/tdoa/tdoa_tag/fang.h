@@ -4,6 +4,13 @@
 #include "agv_types.h"
 #include "tdoa_tag_engine.h"
 
+//z轴过滤阈值（AGV搭载UWB标签高度）
+#define STD_Z_AXIS 0.3
+
+/*
+ * fang算法
+ */
+bool fang(tdoaMeasurement_t* tdoa, point_t* pTagCrd);
 /*
  * 复制tdoa三元组.
  */
@@ -19,11 +26,7 @@ void createInnerAxis();
 /*
  * 计算标签在内坐标轴下的坐标。
  */
-void calcTagInnerCoodinate1();
-/*
- * 计算标签在内坐标轴下的坐标。
- */
-void calcTagInnerCoodinate2();
+bool calcTagInnerCoodinate(point_t* pTagCrd);
 /*
  * 坐标轴转换（内坐标轴转换为外坐标轴）。
  */
