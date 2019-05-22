@@ -55,9 +55,9 @@ typedef struct attitude_s {
 struct vec3_s {
   uint32_t timestamp; // Timestamp when the data was computed
 
-  double x;
-  double y;
-  double z;
+  float x;
+  float y;
+  float z;
 };
 
 typedef struct vec3_s vector_t;
@@ -91,27 +91,15 @@ typedef struct quaternion_s {
 //   float stdDev;
 // } tdoaMeasurement_t;
 
-#define TDOA_EXPIRED 5000
-#define TDOA_QUEUE_LENTH 28
-#define TDOA_ANCHOR_COUNT 8
 typedef struct tdoaMeasurement_s {
   point_t anchorPosition[2];
-  double distanceDiff;
+  float distanceDiff;
   // float distance;
   uint8_t idA;
   uint8_t idB;
 //  uint8_t used;
 //  uint32_t endOfLife;
 } tdoaMeasurement_t;//默认idA小于idB,规范存储，减少重复。
-
-typedef tdoaMeasurement_t tdoaQueue_t[TDOA_QUEUE_LENTH];//理论上最多8个基站间的TDOA数据量为28.
-
-//typedef struct anchorIds_s {
-//	uint8_t id;
-//	uint8_t used;
-//} anchorIds_t;
-//
-//typedef anchorIds_t ids_t[TDOA_ANCHOR_COUNT];
 
 typedef struct sensorData_s {
   Axis3f acc;               // Gs

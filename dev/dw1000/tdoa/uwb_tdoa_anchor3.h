@@ -9,4 +9,7 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
 uint32_t tdoa3UwbEvent(dwDevice_t *dev);
 void tdoa3Init(uwbConfig_t *config);
 
+// // 声明setupTx，便于人员安全避让功能使用
+// void setupTx(dwDevice_t* dev);
+
 #endif

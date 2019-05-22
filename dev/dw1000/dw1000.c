@@ -52,6 +52,7 @@
 #include "deca_device_api.h"
 #include "deca_regs.h"
 #include "tdoa/tdoa_decadriver.h"
+#include "project_common_conf.h"
 // #include "tdoa/uwb_tdoa_anchor3.h"
 /*---------------------------------------------------------------------------*/
 #define DEBUG 0
@@ -571,7 +572,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
         /* Copy the received frame to packetbuf */
         dw1000_radio_read(packetbuf_dataptr(), data_len);
-#if TDOA_DEV_TAG
+#if UWB_TYPE_CONFIG
         handleTagRxPacket(rxTime.low32, packetbuf_dataptr(), data_len);
 #else
         handleRxPacket(rxTime.low32, packetbuf_dataptr(), data_len, tx_stamp.low32); //data_len不包括2字节的crc

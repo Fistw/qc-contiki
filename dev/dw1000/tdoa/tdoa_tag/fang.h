@@ -4,8 +4,7 @@
 #include "agv_types.h"
 #include "tdoa_tag_engine.h"
 
-//z轴过滤阈值（AGV搭载UWB标签高度）
-#define STD_Z_AXIS 0.3
+
 
 /*
  * fang算法

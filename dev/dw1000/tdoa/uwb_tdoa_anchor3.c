@@ -17,6 +17,7 @@
 #include "uwb_tdoa_anchor3.h"
 #include "decadriver/deca_regs.h"
 #include "decadriver/deca_device_api.h"
+#include "anchor_conf.h"
 
 // 根据设定的协议，定义数据包结构体及相关变量
 // Time length of the preamble
@@ -126,6 +127,7 @@ typedef struct
     uint8_t type;
     uint8_t seq;
     uint32_t txTimeStamp;
+    uint8_t anchorCoordinate[6];
     uint8_t remoteCount;
 } __attribute__((packed)) rangePacketHeader3_t;
 
@@ -151,6 +153,14 @@ typedef struct
     rangePacketHeader3_t header;
     uint8_t remoteAnchorData; //data部分的定义？
 } __attribute__((packed)) rangePacket3_t;
+
+// 定义人员安全避让功能的帧负载格式
+typedef struct 
+{
+    uint8_t type;
+    uint8_t personCoordinate[4];
+} __attribute__((packed)) avoidPacket_t;
+
 
 // 重置AnchorRxCount列表
 static void clearAnchorRxCount()
@@ -519,7 +529,7 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     }
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
     {
-    	printf("Not a TDOA3 Packet.\n");
+    	// printf("Not a TDOA3 Packet.\n");
     	return;
     }
 
@@ -578,6 +588,13 @@ static int populateTxData(rangePacket3_t *rangePacket)
     // rangePacket->header.type already populated
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
+    uint8_t* tmp = rangePacket->header.anchorCoordinate;
+    tmp[0] = ANCHOR_X_AXIS_INT_CONFIG;
+    tmp[1] = ANCHOR_X_AXIS_FLO_CONFIG;
+    tmp[2] = ANCHOR_Y_AXIS_INT_CONFIG;
+    tmp[3] = ANCHOR_Y_AXIS_FLO_CONFIG;
+    tmp[4] = ANCHOR_Z_AXIS_INT_CONFIG;
+    tmp[5] = ANCHOR_Z_AXIS_FLO_CONFIG;
     printf("Transmite id:::%d, txTime:::%u, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
 
     uint8_t remoteAnchorCount = 0;
@@ -668,6 +685,7 @@ static void setupTx(dwDevice_t *dev)
 {
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
     txTime.full += 16455l;
+    
 	ctx.txTime = txTime.low32;
 	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
 

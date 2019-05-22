@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #define PACKET_TYPE_TDOA3 0x30
+#define PACKET_TYPE_AVOID 0x01
 
 #define TDOA3_RECEIVE_TIMEOUT 10000
 
@@ -20,6 +21,7 @@ typedef struct
     uint8_t type;
     uint8_t seq;
     uint32_t txTimeStamp;
+    uint8_t anchorCoordinate;
     uint8_t remoteCount;
 } __attribute__((packed)) rangePacketHeader3_t;
 
@@ -47,5 +49,12 @@ typedef struct
     rangePacketHeader3_t header;
     uint8_t remoteAnchorData;
 } __attribute__((packed)) rangePacket3_t;
+
+// 定义人员安全避让功能的帧负载格式
+typedef struct 
+{
+    uint8_t type;
+    uint8_t personCoordinate[4];
+} __attribute__((packed)) avoidPacket_t;
 
 #endif
