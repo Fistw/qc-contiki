@@ -80,6 +80,7 @@ static int updateRemoteData(tdoaAnchorContext_t *anchorCtx, const void *payload)
 {
   const rangePacket3_t *packet = (rangePacket3_t *)payload;
   const void *anchorDataPtr = &packet->remoteAnchorData;
+  printf("remoteCount=%d\n",packet->header.remoteCount);
   for (uint8_t i = 0; i < packet->header.remoteCount; i++)
   {
     remoteAnchorDataFull_t *anchorData = (remoteAnchorDataFull_t *)anchorDataPtr;
@@ -134,7 +135,8 @@ void handleTdoaPacket(uint32_t rxTime, const packet_t *prxPacket)
   const int64_t txAn_in_cl_An = packet->header.txTimeStamp;
   uint8_t seqNr = packet->header.seq;
   uint8_t* tmp = packet->header.anchorCoordinate;
-  
+  for(int i = 0; i < 6; i++)
+    printf("tmp[%d]=%d ",i,tmp[i]);
   //统计收包率
   printf("Debug: get packet from %d, seqNr=%d, now is %u\n", anchorId, seqNr, clock_time());
 
@@ -143,6 +145,11 @@ void handleTdoaPacket(uint32_t rxTime, const packet_t *prxPacket)
   uint32_t now_ms = clock_time();
   // using tdoa_storage to Get AnchorCtx for packet processing
   tdoaEngineGetAnchorCtxForPacketProcessing(&engineState, anchorId, now_ms, &anchorCtx);
+
+  for(int i = 0; i < 16; i++){
+    if(engineState.anchorInfoArray[i].isInitialized)
+      printf("id=%d,seqNr=%d\n",engineState.anchorInfoArray[i].id,engineState.anchorInfoArray[i].seqNr);
+  }
 
   tdoaStorageSetAnchorPosition(&anchorCtx, tmp[0]+tmp[1]*1e-2,tmp[2]+tmp[3]*1e-2,tmp[4]+tmp[5]*1e-2);
   // // 粗暴设置基站位置

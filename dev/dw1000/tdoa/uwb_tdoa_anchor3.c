@@ -597,7 +597,8 @@ static int populateTxData(rangePacket3_t *rangePacket)
     tmp[4] = (uint8_t)coo[2];
     tmp[5] = (uint8_t)(coo[2]-(uint8_t)coo[2])*1e2;
     printf("Transmite id:::%d, txTime:::%u, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
-
+    for(int i = 0; i < 6; i++)
+        printf("tmp[%d]=%d ",i,tmp[i]);
     uint8_t remoteAnchorCount = 0;
     uint8_t *anchorDataPtr = &rangePacket->remoteAnchorData;
     for (uint8_t i = 0; i < ctx.remoteTxIdCount; i++)
@@ -627,6 +628,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
             remoteAnchorCount++;
         }
     }
+    printf("remoteAnchorCount=%d\n",remoteAnchorCount);
     rangePacket->header.remoteCount = remoteAnchorCount;
 
     return (uint8_t *)anchorDataPtr - (uint8_t *)rangePacket;
