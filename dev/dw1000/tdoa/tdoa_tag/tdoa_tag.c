@@ -195,10 +195,10 @@ void handleAvoidPacket(uint32_t rxTime, const packet_t *prxPacket)
     .y = coor[2]+coor[3]*1e2,
   };
   uint8_t diff = (uint8_t)sqrtf(powf(tagCrd.x-personCoor.x,2)+powf(tagCrd.y-personCoor.y,2));
-  if(diff <= 0x05){
-    printf("AGV need slow down.");
-  }else if(diff <= 0x03){
+  if(diff <= 0x03){
     printf("AGV need stop.");
+  }else if(diff <= 0x05){
+    printf("AGV need slow down.");
   }
 #endif
 
