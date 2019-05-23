@@ -3,11 +3,14 @@
 
 #include "uwb.h"
 #include "tdoa_decadriver.h"
+#include "tag_conf.h"
 
 void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t regTxTime);
 
 uint32_t tdoa3UwbEvent(dwDevice_t *dev);
 void tdoa3Init(uwbConfig_t *config);
+// 便于人员安全避让功能使用
+void setupTx(float* array);
 
 // // 声明setupTx，便于人员安全避让功能使用
 // void setupTx(dwDevice_t* dev);

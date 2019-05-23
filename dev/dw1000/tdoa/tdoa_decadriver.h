@@ -176,7 +176,7 @@ void dwSetTxRxTime(dwDevice_t *dev, const dwTime_t futureTime);
 // void dwSetChannel(dwDevice_t* dev, uint8_t channel);
 // void dwSetPreambleCode(dwDevice_t* dev, uint8_t preacode);
 // void dwSetDefaults(dwDevice_t* dev);
-void dwSetData(dwDevice_t *dev, uint8_t data[], unsigned int n);
+void dwSetData(uint8_t data[], unsigned int n);
 // unsigned int dwGetDataLength(dwDevice_t* dev);
 // void dwGetData(dwDevice_t* dev, uint8_t data[], unsigned int n);
 // void dwGetTransmitTimestamp(dwDevice_t* dev, dwTime_t* time);

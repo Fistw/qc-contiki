@@ -119,6 +119,7 @@ static struct ctx_s
 
 // Packet formats
 #define PACKET_TYPE_TDOA3 0x30
+#define PACKET_TYPE_AVOID 0x01
 
 // https://wiki.bitcraze.io/doc:lps:tdoa3:protocol
 // TDoA Anchor protocol V3的头部定义
@@ -553,7 +554,7 @@ static void adjustTxRxTime(dwTime_t *time)
 }
 
 ////////////////////////////////// dwTime_t ？？
-static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
+static dwTime_t findTransmitTimeAsSoonAsPossible()
 {
     dwTime_t transmitTime = {.full = 0};
     //////////////////////////////////
@@ -583,19 +584,20 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
 }
 
 // 填充TX 数据
-static int populateTxData(rangePacket3_t *rangePacket)
+static int populateTxData(float* array, rangePacket3_t *rangePacket)
 {
+#ifndef UWB_TYPE_PERSON_CONFIG
     // rangePacket->header.type already populated
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
     uint8_t* tmp = rangePacket->header.anchorCoordinate;
     float coo[3] = ANCHOR_AXIS_CONFIG;
     tmp[0] = (uint8_t)coo[0];
-    tmp[1] = (uint8_t)(coo[0]-(uint8_t)coo[0])*1e2;
+    tmp[1] = (uint8_t)((coo[0]-(uint8_t)coo[0])*1e2);
     tmp[2] = (uint8_t)coo[1];
-    tmp[3] = (uint8_t)(coo[1]-(uint8_t)coo[1])*1e2;
+    tmp[3] = (uint8_t)((coo[1]-(uint8_t)coo[1])*1e2);
     tmp[4] = (uint8_t)coo[2];
-    tmp[5] = (uint8_t)(coo[2]-(uint8_t)coo[2])*1e2;
+    tmp[5] = (uint8_t)((coo[2]-(uint8_t)coo[2])*1e2);
     printf("Transmite id:::%d, txTime:::%u, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
     for(int i = 0; i < 6; i++)
         printf("tmp[%d]=%d ",i,tmp[i]);
@@ -632,11 +634,20 @@ static int populateTxData(rangePacket3_t *rangePacket)
     rangePacket->header.remoteCount = remoteAnchorCount;
 
     return (uint8_t *)anchorDataPtr - (uint8_t *)rangePacket;
+#else
+    avoidPacket_t* coo = (avoidPacket_t*)rangePacket;
+    coo->personCoordinate[0] = (uint8_t)array[0];
+    coo->personCoordinate[1] = (uint8_t)((array[0]-(uint8_t)array[0])*1e2);
+    coo->personCoordinate[2] = (uint8_t)array[1];
+    coo->personCoordinate[3] = (uint8_t)((array[1]-(uint8_t)array[1])*1e2);
+
+    return 5;
+#endif
 }
 
 // Set TX data in the radio TX buffer
 ////////////////////////////////// dwDevice_t
-static void setTxData(dwDevice_t *dev)
+static void setTxData(float* array)
 {
     ////////////////////////////////// packet_t在mac.h中定义
     static packet_t txPacket;
@@ -647,18 +658,22 @@ static void setTxData(dwDevice_t *dev)
     {
 
         memcpy(txPacket.sourceAddress, base_address, 8);
+#ifndef UWB_TYPE_PERSON_CONFIG
         txPacket.sourceAddress[0] = ctx.anchorId;
+        txPacket.payload[0] = PACKET_TYPE_TDOA3;
+#else
+        txPacket.sourceAddress[0] = 0xff;
+        txPacket.payload[0] = PACKET_TYPE_AVOID;
+#endif
         memcpy(txPacket.destAddress, base_address, 8);
         txPacket.destAddress[0] = 0xff;
-
-        txPacket.payload[0] = PACKET_TYPE_TDOA3;
 
         firstEntry = false;
     }
 
     uwbConfig_t *uwbConfig = uwbGetConfig();
 
-    int rangePacketSize = populateTxData((rangePacket3_t *)txPacket.payload);
+    int rangePacketSize = populateTxData(array,(rangePacket3_t *)txPacket.payload);
 
 //    printf("send:\n");
 //    for (int i = 0; i < rangePacketSize; i++)
@@ -680,19 +695,19 @@ static void setTxData(dwDevice_t *dev)
     // }
 
     // dwSetData(dev, (uint8_t *)&txPacket, MAC802154_HEADER_LENGTH + rangePacketSize + lppLength);
-    dwSetData(dev, (uint8_t *)&txPacket, MAC802154_HEADER_LENGTH + rangePacketSize);
+    dwSetData((uint8_t *)&txPacket, MAC802154_HEADER_LENGTH + rangePacketSize);
 }
 
 // Setup the radio to send a packet
-static void setupTx(dwDevice_t *dev)
+void setupTx(float* array)
 {
-    dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
+    dwTime_t txTime = findTransmitTimeAsSoonAsPossible();
     txTime.full += 16455l;
-    
+#ifndef UWB_TYPE_PERSON_CONFIG
 	ctx.txTime = txTime.low32;
 	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
-
-	setTxData(dev);
+#endif
+	setTxData(array);
 
     //////////////////////////////////
     // dwNewTransmit(dev);

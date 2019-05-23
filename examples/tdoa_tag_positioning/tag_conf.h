@@ -6,7 +6,7 @@
 #ifdef UWB_TYPE_TAG_CONFIG
 
 // 人员信标（默认值=0，AGV信标）
-#define UWB_TYPE_PERSON_CONFIG	0
+#define UWB_TYPE_PERSON_CONFIG	1
 
 #endif
 

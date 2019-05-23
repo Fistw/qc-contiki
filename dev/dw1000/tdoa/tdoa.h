@@ -21,7 +21,7 @@ typedef struct
     uint8_t type;
     uint8_t seq;
     uint32_t txTimeStamp;
-    uint8_t anchorCoordinate;
+    uint8_t anchorCoordinate[6];
     uint8_t remoteCount;
 } __attribute__((packed)) rangePacketHeader3_t;
 

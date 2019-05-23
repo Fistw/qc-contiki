@@ -8,7 +8,7 @@ void dwGetSystemTimestamp(dwTime_t *time)
     dwt_readfromdevice(SYS_TIME_ID, SYS_TIME_OFFSET, SYS_TIME_LEN, time->raw);
 }
 
-void dwSetData(dwDevice_t *dev, uint8_t data[], unsigned int n)
+void dwSetData(uint8_t data[], unsigned int n)
 {
     // if (dev->frameCheck)
     {

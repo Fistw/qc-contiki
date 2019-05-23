@@ -56,25 +56,25 @@ bool fangGetTdoaMeasurement(tdoaMeasurement_t* tdoa)
             return false;
         }
     }
-
-    //检测共面
-    point_t *a1, *a2, *a3, *a4, v12, v13, v14;
-
-    a1 = &tdoaTriad[0].anchorPosition[0];
-    a2 = &tdoaTriad[0].anchorPosition[1];
-    a3 = &tdoaTriad[1].anchorPosition[1];
-    a4 = &tdoaTriad[2].anchorPosition[1];
-
-    createVector(a1, a2, &v12);
-    createVector(a1, a3, &v13);
-    createVector(a1, a4, &v14);
-
-    point_t vn = {.x=v12.y*v13.z-v13.y*v12.z,
-                  .y=v13.x*v12.z-v12.x*v13.z,
-                  .z=v12.x*v13.y-v13.x*v12.y};
-    //arccos0.4
-    return(fabs(multipleVector(&vn, &v14)/(sqrtf(multipleVector(&vn, &vn))*sqrtf(multipleVector(&v14, &v14))))
-            > COPLANAR_FILTER_CONFIG ? true : false);
+    return true;
+//    //检测共面
+//    point_t *a1, *a2, *a3, *a4, v12, v13, v14;
+//
+//    a1 = &tdoaTriad[0].anchorPosition[0];
+//    a2 = &tdoaTriad[0].anchorPosition[1];
+//    a3 = &tdoaTriad[1].anchorPosition[1];
+//    a4 = &tdoaTriad[2].anchorPosition[1];
+//
+//    createVector(a1, a2, &v12);
+//    createVector(a1, a3, &v13);
+//    createVector(a1, a4, &v14);
+//
+//    point_t vn = {.x=v12.y*v13.z-v13.y*v12.z,
+//                  .y=v13.x*v12.z-v12.x*v13.z,
+//                  .z=v12.x*v13.y-v13.x*v12.y};
+//    //arccos0.4
+//    return(fabs(multipleVector(&vn, &v14)/(sqrtf(multipleVector(&vn, &vn))*sqrtf(multipleVector(&v14, &v14))))
+//            > COPLANAR_FILTER_CONFIG ? true : false);
 }
 
 /*
