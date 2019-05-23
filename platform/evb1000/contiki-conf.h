@@ -42,10 +42,10 @@
 
 #include <stdint.h>
 /*---------------------------------------------------------------------------*/
-/* Include Project Specific conf */
-#ifdef PROJECT_CONF_H
-#include PROJECT_CONF_H
-#endif /* PROJECT_CONF_H */
+///* Include Project Specific conf */
+//#ifdef PROJECT_CONF_H
+//#include PROJECT_CONF_H
+//#endif /* PROJECT_CONF_H */
 /*---------------------------------------------------------------------------*/
 /* Compiler configurations */
 #define CCIF

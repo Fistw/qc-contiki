@@ -1,11 +1,12 @@
 #include "uwb.h"
 #include "tdoa_decadriver.h"
+#include "anchor_conf.h"
 
 // System configuration
 static struct uwbConfig_s config =
     {
         address :
-            {11, 0, 0, 0, 0, 0, 0xcf, 0xbc},
+            {anchorID_CONFIG, 0, 0, 0, 0, 0, 0xcf, 0xbc},
     };
 
 struct uwbConfig_s *uwbGetConfig()

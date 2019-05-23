@@ -589,12 +589,13 @@ static int populateTxData(rangePacket3_t *rangePacket)
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
     uint8_t* tmp = rangePacket->header.anchorCoordinate;
-    tmp[0] = ANCHOR_X_AXIS_INT_CONFIG;
-    tmp[1] = ANCHOR_X_AXIS_FLO_CONFIG;
-    tmp[2] = ANCHOR_Y_AXIS_INT_CONFIG;
-    tmp[3] = ANCHOR_Y_AXIS_FLO_CONFIG;
-    tmp[4] = ANCHOR_Z_AXIS_INT_CONFIG;
-    tmp[5] = ANCHOR_Z_AXIS_FLO_CONFIG;
+    float coo[3] = ANCHOR_AXIS_CONFIG;
+    tmp[0] = (uint8_t)coo[0];
+    tmp[1] = (uint8_t)(coo[0]-(uint8_t)coo[0])*1e2;
+    tmp[2] = (uint8_t)coo[1];
+    tmp[3] = (uint8_t)(coo[1]-(uint8_t)coo[1])*1e2;
+    tmp[4] = (uint8_t)coo[2];
+    tmp[5] = (uint8_t)(coo[2]-(uint8_t)coo[2])*1e2;
     printf("Transmite id:::%d, txTime:::%u, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
 
     uint8_t remoteAnchorCount = 0;

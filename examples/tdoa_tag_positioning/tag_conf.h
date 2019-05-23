@@ -3,6 +3,13 @@
 
 #include "project_common_conf.h"
 
+#ifdef UWB_TYPE_TAG_CONFIG
+
+// 人员信标（默认值=0，AGV信标）
+#define UWB_TYPE_PERSON_CONFIG	0
+
+#endif
+
 // AGV标签、人共有配置
 // AGV搭载UWB标签高度
 #define AGV_Z_AXIS_CONFIG       0.3
@@ -13,8 +20,12 @@
 // 检测基站共面，cos=0.4
 #define COPLANAR_FILTER_CONFIG  0.4
 
+#ifdef UWB_TYPE_PERSON_CONFIG
+
 // 人私有配置
 // 发射功率（默认值=33.5db）
 #define txPower_CONFIG          0x1F1F1F1F
+
+#endif
 
 #endif /* TAG_CONF_H_ */

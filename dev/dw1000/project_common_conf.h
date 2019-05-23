@@ -13,7 +13,7 @@
 #define phrMode_CONFIG          DWT_PHRMODE_STD
 #define sfdTO_CONFIG            (129 + 8 - 8)
 
-// UWB信标类型（0x01:基站，0x02:AGV标签，0x04:人）
-#define UWB_TYPE_CONFIG         0x02
+// UWB信标类型（默认值=0，标签）
+#define UWB_TYPE_TAG_CONFIG		1
 
 #endif /* PROJECT_COMMON_CONF_H_ */

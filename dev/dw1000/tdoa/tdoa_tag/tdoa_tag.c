@@ -63,9 +63,9 @@ static void setup(){
   }
   uint8_t* coo = &txPacket.payload[1];
   coo[0] = (uint8_t)tagCrd.x;
-  coo[1] = (uint8_t)(tagCrd.x-(uint8_t)tagCrd.x)*1e3;
+  coo[1] = (uint8_t)(tagCrd.x-(uint8_t)tagCrd.x)*1e2;
   coo[2] = (uint8_t)tagCrd.y;
-  coo[3] = (uint8_t)(tagCrd.y-(uint8_t)tagCrd.y)*1e3;
+  coo[3] = (uint8_t)(tagCrd.y-(uint8_t)tagCrd.y)*1e2;
 
   dwt_writetxdata(MAC802154_HEADER_LENGTH + 5 + 2, (uint8_t *)&txPacket, 0); /* Zero offset in TX buffer. */
   dwt_writetxfctrl(MAC802154_HEADER_LENGTH + 5 + 2, 0, 1);              /* Zero offset in TX buffer, no ranging. */
@@ -144,7 +144,7 @@ void handleTdoaPacket(uint32_t rxTime, const packet_t *prxPacket)
   // using tdoa_storage to Get AnchorCtx for packet processing
   tdoaEngineGetAnchorCtxForPacketProcessing(&engineState, anchorId, now_ms, &anchorCtx);
 
-  tdoaStorageAnchorPosition(&anchorCtx, tmp[0]+tmp[1]*1e-3,tmp[2]+tmp[3]*1e-3,tmp[4]+tmp[5]*1e-3);
+  tdoaStorageSetAnchorPosition(&anchorCtx, tmp[0]+tmp[1]*1e-2,tmp[2]+tmp[3]*1e-2,tmp[4]+tmp[5]*1e-2);
   // // 粗暴设置基站位置
   // if (anchorId == 1)
   // {
@@ -187,17 +187,21 @@ void handleTdoaPacket(uint32_t rxTime, const packet_t *prxPacket)
 
 void handleAvoidPacket(uint32_t rxTime, const packet_t *prxPacket)
 {
+
+#ifndef UWB_TYPE_PERSON_CONFIG
   uint8_t* coor = &prxPacket->payload[1];
   point_t personCoor = {
-    .x = coor[0]+coor[1]*1e3,
-    .y = coor[2]+coor[3]*1e3,
+    .x = coor[0]+coor[1]*1e2,
+    .y = coor[2]+coor[3]*1e2,
   };
-  uint8_t diff = (uint8_t)sqrtf(powf(tagCrd.x-personCoor.x)+powf(tagCrd.y-personCoor.y));
+  uint8_t diff = (uint8_t)sqrtf(powf(tagCrd.x-personCoor.x,2)+powf(tagCrd.y-personCoor.y,2));
   if(diff <= 0x05){
     printf("AGV need slow down.");
   }else if(diff <= 0x03){
     printf("AGV need stop.");
   }
+#endif
+
 }
 
 void handleTagRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
@@ -258,9 +262,11 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 	// 										(int)(state.position.z*1000));
   if(fang(tdoaMeasurement, &tagCrd)){
     printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
-    if(UWB_TYPE_CONFIG & 0x04 == 1){
+// 人员安全避让功能
+#ifdef UWB_TYPE_PERSON_CONFIG
       setupTx();
-    }
+#endif
+
   }else{
     printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
   }

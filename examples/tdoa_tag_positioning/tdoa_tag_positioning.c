@@ -27,11 +27,13 @@ PROCESS_THREAD(tdoa_tag_positioning, ev, data)
 {
     PROCESS_BEGIN();
 
+#ifdef UWB_TYPE_PERSON_CONFIG
     // 设置发射功率：15db=0010,0000、33.5db=0001,1111
     static dwt_txconfig_t txConfig = {.PGdly=0xC0, .power=txPower_CONFIG};
     /* 关闭智能功率调节 */
     dwt_setsmarttxpower(0);
     dwt_configuretxrf(&txConfig);
+#endif
     
     dw1000_configure(&radio_config);
     printf("Process begin\n");
