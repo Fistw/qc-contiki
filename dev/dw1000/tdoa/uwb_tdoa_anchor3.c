@@ -18,6 +18,7 @@
 #include "uwb_tdoa_anchor3.h"
 #include "decadriver/deca_regs.h"
 #include "decadriver/deca_device_api.h"
+#include "dev/leds.h"
 
 // 根据设定的协议，定义数据包结构体及相关变量
 // Time length of the preamble
@@ -70,6 +71,14 @@
 // Useful constants
 static const uint8_t base_address[] = {0, 0, 0, 0, 0, 0, 0xcf, 0xbc};
 
+typedef struct
+{
+	double FPLevel, RxLevel, Diff;
+} power_t;
+
+static power_t history_power[10];
+static uint8_t powerPoint = 0;
+
 // 表示本地存储的Remote anchor context信息的结构体
 typedef struct
 {
@@ -78,7 +87,7 @@ typedef struct
     bool isUsed; // 一个标识位：这个anchorCtx是否是有用的
 
     // 协议内容
-    uint8_t seqNr;
+    uint16_t seqNr;
     uint32_t rxTimeStamp;
     uint32_t txTimeStamp; //???
     uint16_t distance;
@@ -96,7 +105,7 @@ static struct ctx_s
     int anchorId;
 
     // Header部分的数据
-    uint8_t seqNr;   // 最近发送的包的序列号
+    uint16_t seqNr;   // 最近发送的包的序列号
     uint32_t txTime; // 最近发送的包的发送时间戳，由UWB标记
 
     uint32_t nextTxTick; // 下一次发送包的发送时间(system clock ticks)
@@ -123,7 +132,7 @@ static struct ctx_s
 typedef struct
 {
     uint8_t type;
-    uint8_t seq;
+    uint16_t seq;
     uint32_t txTimeStamp;
     uint8_t remoteCount;
 } __attribute__((packed)) rangePacketHeader3_t;
@@ -132,7 +141,7 @@ typedef struct
 typedef struct
 {
     uint8_t id;
-    uint8_t seq;
+    uint16_t seq;
     uint32_t rxTimeStamp;
     uint16_t distance;
 } __attribute__((packed)) remoteAnchorDataFull_t;
@@ -140,7 +149,7 @@ typedef struct
 typedef struct
 {
     uint8_t id;
-    uint8_t seq;
+    uint16_t seq;
     uint32_t rxTimeStamp;
 } __attribute__((packed)) remoteAnchorDataShort_t;
 
@@ -434,12 +443,12 @@ static bool extractFromPacket(const rangePacket3_t *rangePacket, uint32_t *remot
         const uint8_t id = anchorData->id;
         if (id == ctx.anchorId)
         {
-            *remoteRxSeqNr = anchorData->seq & 0x7f; //chenxin:这是作为发包方的远端基站收到的此基站上一次包的序列号，seq第一位是hasDistance，后七位为序列号
+            *remoteRxSeqNr = anchorData->seq & 0x7fff; //chenxin:这是作为发包方的远端基站收到的此基站上一次包的序列号，seq第一位是hasDistance，后七位为序列号
             *remoteRx = anchorData->rxTimeStamp;     //chenxin:这是作为发包方的远端基站收到的此基站上一次包的时间
             return true;
         }
 
-        bool hasDistance = ((anchorData->seq & 0x80) != 0);
+        bool hasDistance = ((anchorData->seq & 0x8000) != 0);
         //chenxin?remote data section不止一段
         if (hasDistance)
         {
@@ -498,14 +507,15 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     	const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
 
         uint32_t remoteTx = rangePacket->header.txTimeStamp;
-        uint8_t remoteTxSeqNr = rangePacket->header.seq;
-        printf("remoteTx: %u, remoteSeq: %d\n", remoteTx, remoteTxSeqNr);
+        uint16_t remoteTxSeqNr = rangePacket->header.seq;
+//        printf("remoteTx: %u, remoteSeq: %d\n", remoteTx, remoteTxSeqNr);
+        printf("%d\n", remoteTxSeqNr);
 
         double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
 //        clockCorrection = 1;
-        int i1 = clockCorrection;
-        int i2 = (clockCorrection - i1) * 1000000000;
-        printf("clockCorrection: %d.%09d\n", i1, i2);
+//        int i1 = clockCorrection;
+//        int i2 = (clockCorrection - i1) * 1000000000;
+//        printf("clockCorrection: %d.%09d\n", i1, i2);
 
         if (updateClockCorrection(anchorCtx, clockCorrection))
         {
@@ -551,6 +561,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
 void diagnostics()
 {
 	dwt_rxdiag_t diag;
+	double avg = 0;
 	dwt_readdiagnostics(&diag);
 
 	int32_t CIR = diag.maxGrowthCIR;
@@ -559,8 +570,40 @@ void diagnostics()
 			/(diag.rxPreamCount * diag.rxPreamCount)) - 121.74;
 	int i1 = RxLevel;
 	int i2 = FPLevel;
-	printf("FPLevel: %d\n", i2);
-	printf("RxLevel: %d\n", i1);
+	printf("%d, ", i2); // FPLevel:
+	printf("%d, ", i1); // RxLevel:
+	powerPoint = (powerPoint + 1) % 10;
+	history_power[powerPoint].FPLevel = FPLevel;
+	history_power[powerPoint].RxLevel = RxLevel;
+	double Diff = RxLevel - FPLevel;
+	int i3 = Diff;
+	printf("%d, ", i3);
+	history_power[powerPoint].Diff = Diff;
+	for (uint8_t i = 0; i < 3; i++)
+		avg += history_power[(powerPoint+10-i)%10].Diff;
+	avg /= 3;
+	if (avg < 2.5)
+	{
+		if (RxLevel < -80)
+			printf("%d, ", 1);
+		else
+			printf("%d, ", 0);
+	}
+	else if (avg < 6)
+	{
+		if (RxLevel < -95)
+			printf("%d, ", 1);
+		else
+			printf("%d, ", 0);
+	}
+	else
+	{
+		if (RxLevel < -90)
+			printf("%d, ", 1);
+		else
+			printf("%d, ", 0);
+	}
+	printf("\n");
 }
 
 void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t regTxTime)
@@ -569,12 +612,13 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     uint8_t *prxPacket = &rxPacket;
     int dataLength = data_len;
 
-    diagnostics();
-
     for (int i = 0; i < data_len; i++)
     {
         prxPacket[i] = packetbuf[i];
     }
+
+    //printf("%d, ", rxPacket.sourceAddress[0]);
+    diagnostics();
 
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
     {
@@ -611,10 +655,10 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     	int index = ctx.anchorCtxLookup[i];
     	if(index != 0xff){
     		anchorContext_t* panchorCtx = &ctx.anchorCtx[index];
-    	double dd = (double)panchorCtx->distance/(499.2e6*128)*299792458;
-		int i1 = dd;
-		int i2 = (dd-i1)*1e3;
-    	printf("anchorId: %d, distance: %u, %d.%d\n", panchorCtx->id, panchorCtx->distance,i1,i2);
+//    	double dd = (double)panchorCtx->distance/(499.2e6*128)*299792458;
+//		int i1 = dd;
+//		int i2 = (dd-i1)*1e3;
+//    	printf("anchorId: %d, distance: %u, %d.%d\n", panchorCtx->id, panchorCtx->distance,i1,i2);
     	}
     }
 }
@@ -650,8 +694,6 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
     // DW1000 can only schedule time with 9 LSB at 0, adjust for it
     adjustTxRxTime(&transmitTime);
 
-//    printf("after: %u %u\n", transmitTime.high8, transmitTime.low32);
-//    printf("after: %u %u\n", transmitTime.high32, transmitTime.low8);
     return transmitTime;
 }
 
@@ -661,7 +703,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
     // rangePacket->header.type already populated
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
-    printf("txTime: %u, seq: %d\n", ctx.txTime, ctx.seqNr);
+//    printf("txTime: %u, seq: %d\n", ctx.txTime, ctx.seqNr);
 
     uint8_t remoteAnchorCount = 0;
     uint8_t *anchorDataPtr = &rangePacket->remoteAnchorData;
@@ -682,7 +724,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
             {
                 anchorData->distance = anchorCtx->distance;
                 anchorDataPtr += sizeof(remoteAnchorDataFull_t);
-                anchorData->seq |= 0x80;
+                anchorData->seq |= 0x8000;
             }
             else
             {
@@ -752,7 +794,7 @@ static void setupTx(dwDevice_t *dev)
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
     txTime.full += 16455l;
 	ctx.txTime = txTime.low32;
-	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
+	ctx.seqNr = (ctx.seqNr + 1) & 0x7fff;
 
 	setTxData(dev);
 
@@ -815,7 +857,6 @@ void tdoa3Init(uwbConfig_t *config)
 // 有一些uwb事件中断发生，比如收到包，发送包，超时等；
 uint32_t tdoa3UwbEvent(dwDevice_t *dev)
 {
-	printf("tdoa3uwbevent is called.\n");
     uint32_t now = clock_time();
     if (now > ctx.nextAnchorListUpdate)
     {
@@ -823,22 +864,8 @@ uint32_t tdoa3UwbEvent(dwDevice_t *dev)
         ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL; // 更新update时间
     }
 
-//    if (ctx.nextTxTick < now)
-//    {
-//        uint32_t newDelay = randomizeDelayToNextTx();
-//        ////////////////////////////////// M2T()方法
-//        ctx.nextTxTick = now + newDelay;
-//
-//        // 准备发送
-//        printf("setupTx is called.\n");
-//        setupTx(dev);
-//    }
-
     setupTx(dev);
 	uint32_t newDelay = randomizeDelayToNextTx();
 	ctx.nextTxTick = now + newDelay;
     return newDelay;
-//
-//    uint32_t timeout_ms =  ctx.nextTxTick - now;
-//    return timeout_ms;
 }

@@ -23,7 +23,7 @@ typedef struct packet_s
         } fcf_s;
     };
 
-    uint8_t seq;
+    uint16_t seq;
     uint16_t pan;
     uint8_t destAddress[8];
     uint8_t sourceAddress[8];

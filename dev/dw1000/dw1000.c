@@ -45,7 +45,7 @@
 #include "net/rime/rimestats.h"
 #include "net/netstack.h"
 #include "board.h" /* To be removed after debugging */
-#include "leds.h"  /* To be removed after debugging */
+#include "dev/leds.h"  /* To be removed after debugging */
 #include <stdbool.h>
 #include "dev/watchdog.h"
 /*---------------------------------------------------------------------------*/
@@ -136,7 +136,8 @@ static radio_result_t dw1000_set_object(radio_param_t param, const void *src, si
 static void
 rx_ok_cb(const dwt_cb_data_t *cb_data)
 {
-	printf("rx_ok_cb is called.\n");
+	leds_set(15);
+//	printf("rx_ok_cb is called.\n");
     /*LEDS_TOGGLE(LEDS_GREEN); */
 #if DW1000_RANGING_ENABLED
     // if(cb_data->rx_flags & DWT_CB_DATA_RX_FLAG_RNG) {
@@ -168,7 +169,9 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     {
         wait_ack_txdone = false;
         process_poll(&dw1000_process);
+
     }
+
 }
 /*---------------------------------------------------------------------------*/
 /* Callback to process RX timeout events */
@@ -194,8 +197,8 @@ rx_to_cb(const dwt_cb_data_t *cb_data)
 static void
 rx_err_cb(const dwt_cb_data_t *cb_data)
 {
-	printf("rx_err_cb is called.\n");
-	printf("%d", cb_data->status);
+//	printf("rx_err_cb is called.\n");
+//	printf("%d", cb_data->status);
 #if DW1000_RANGING_ENABLED
     dw1000_range_reset();
 #endif
@@ -213,10 +216,10 @@ rx_err_cb(const dwt_cb_data_t *cb_data)
 static void
 tx_conf_cb(const dwt_cb_data_t *cb_data)
 {
-	printf("tx_conf_cb is called.\n");
+//	printf("tx_conf_cb is called.\n");
 	dwt_readtxtimestamp(regTxTime.raw);
 	//printf("regTxTime: %u\n", regTxTime.low32);
-	printf("end: %d\n", clock_time());
+//	printf("end: %d\n", clock_time());
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
 
@@ -251,8 +254,8 @@ int dw1000_configure(dwt_config_t *cfg, dwt_txconfig_t *txcfg)
 
     dw1000_on();
 
-//#if DEBUG == 1
-#if 1
+#if DEBUG == 1
+//#if 1
     printf("DW1000 Radio Configuration: \n");
     printf("\t Channel: %u\n", cfg->chan);
     printf("\t PRF: %u\n", cfg->prf);
