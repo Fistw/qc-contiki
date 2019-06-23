@@ -13,7 +13,7 @@
 #define phrMode_CONFIG          DWT_PHRMODE_STD
 #define sfdTO_CONFIG            (129 + 8 - 8)
 
-// UWB信标类型（默认值=0，标签）
-#define UWB_TYPE_TAG_CONFIG		1
+// UWB标签类型（当编译UWB基站时，注释此预定义）
+#define UWB_TYPE_TAG_CONFIG
 
 #endif /* PROJECT_COMMON_CONF_H_ */

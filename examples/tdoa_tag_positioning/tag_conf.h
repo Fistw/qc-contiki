@@ -5,8 +5,8 @@
 
 #ifdef UWB_TYPE_TAG_CONFIG
 
-// 人员信标（默认值=0，AGV信标）
-#define UWB_TYPE_PERSON_CONFIG	1
+// UWB人员标签（当编译AGV标签时，注释此预定义）
+#define UWB_TYPE_PERSON_CONFIG
 
 #endif
 

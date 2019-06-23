@@ -309,18 +309,18 @@ dw1000_init(void)
 #endif
 
     /* Set the configuration values */
-    default_cfg.chan = DW1000_CHANNEL;
-    default_cfg.prf = DW1000_PRF;
-    default_cfg.txPreambLength = DW1000_PLEN;
-    default_cfg.rxPAC = DW1000_PAC;
-    default_cfg.txCode = DW1000_PREAMBLE_CODE;
-    default_cfg.rxCode = DW1000_PREAMBLE_CODE;
-    default_cfg.nsSFD = DW1000_SFD_MODE;
-    default_cfg.dataRate = DW1000_DATA_RATE;
-    default_cfg.phrMode = DW1000_PHR_MODE;
-    default_cfg.sfdTO = DW1000_SFD_TIMEOUT;
+    // default_cfg.chan = DW1000_CHANNEL;
+    // default_cfg.prf = DW1000_PRF;
+    // default_cfg.txPreambLength = DW1000_PLEN;
+    // default_cfg.rxPAC = DW1000_PAC;
+    // default_cfg.txCode = DW1000_PREAMBLE_CODE;
+    // default_cfg.rxCode = DW1000_PREAMBLE_CODE;
+    // default_cfg.nsSFD = DW1000_SFD_MODE;
+    // default_cfg.dataRate = DW1000_DATA_RATE;
+    // default_cfg.phrMode = DW1000_PHR_MODE;
+    // default_cfg.sfdTO = DW1000_SFD_TIMEOUT;
 
-    dw1000_configure(&default_cfg);
+    // dw1000_configure(&default_cfg);
 
     dw1000_on();
 
