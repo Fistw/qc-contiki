@@ -835,7 +835,7 @@ void tdoa3Init(uwbConfig_t *config)
     ctx.txTime = 0;
     ctx.nextTxTick = 0;
     //ctx.averageTxDelay = 1000.0 / ANCHOR_MAX_TX_FREQ;
-    ctx.averageTxDelay = 30;
+    ctx.averageTxDelay = 20;
 
     ctx.remoteTxIdCount = 0;
     ctx.nextAnchorListUpdate = 0;
