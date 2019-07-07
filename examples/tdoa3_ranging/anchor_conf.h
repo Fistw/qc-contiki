@@ -3,7 +3,8 @@
 
 #include "project_common_conf.h"
 
-// 发射功率（默认值=33.5db）
+// tx配置（默认信道4，发射功率33.5db）
+#define txPGdly_CONFIG              0xC0
 #define txPower_CONFIG              0x1F1F1F1F
 // 基站ID
 #define anchorID_CONFIG             0x0a
