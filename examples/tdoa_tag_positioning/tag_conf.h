@@ -24,6 +24,7 @@
 
 // 人私有配置
 // 发射功率（默认值=33.5db）
+#define txPGdly_CONFIG              0x95
 #define txPower_CONFIG          0x1F1F1F1F
 
 #endif

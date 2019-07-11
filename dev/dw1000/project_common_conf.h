@@ -14,6 +14,9 @@
 // sfdTO=preamble length + 1 + SFD length - PAC size 
 #define sfdTO_CONFIG            (2049 + 64 - 64)
 
+//天线延迟
+#define antennadelay_CONFIG     8182
+
 // UWB标签类型（当编译UWB基站时，注释此预定义）
 #define UWB_TYPE_TAG_CONFIG
 

@@ -348,8 +348,8 @@ static void updateAnchorLists()
    {
        freq = ANCHOR_MIN_TX_FREQ;
    }
-   ctx.averageTxDelay = 1000.0 / freq;
-
+//    ctx.averageTxDelay = 1000.0 / freq;
+    ctx.averageTxDelay = 50;
     purgeData();
 }
 
@@ -702,7 +702,7 @@ static void setTxData(float* array)
 void setupTx(float* array)
 {
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible();
-    txTime.full += 16455l;
+    txTime.full += antennadelay_CONFIG;
 #ifndef UWB_TYPE_PERSON_CONFIG
 	ctx.txTime = txTime.low32;
 	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
