@@ -12,7 +12,7 @@
 #define nsSFD_CONFIG            0  
 #define phrMode_CONFIG          DWT_PHRMODE_STD
 // sfdTO=preamble length + 1 + SFD length - PAC size 
-#define sfdTO_CONFIG            (2049 + 8 - 64)
+#define sfdTO_CONFIG            (2049 + 64 - 64)
 
 // UWB标签类型（当编译UWB基站时，注释此预定义）
 #define UWB_TYPE_TAG_CONFIG

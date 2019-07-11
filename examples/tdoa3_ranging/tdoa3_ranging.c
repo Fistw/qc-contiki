@@ -33,10 +33,14 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     // static uint32_t timeout = 30;
     static struct etimer et;
     PROCESS_BEGIN();
-    dw1000_configure(&radio_config);
+    
     /* 关闭智能功率调节 */
     dwt_setsmarttxpower(0);
+    /* 设置tx功率 */
     dwt_configuretxrf(&txConfig);
+    /* 初始化并启动射频 */
+    dw1000_configure(&radio_config);
+
     printf("Process begin\n");
     uwbConfig = uwbGetConfig();
     tdoa3Init(uwbConfig);
