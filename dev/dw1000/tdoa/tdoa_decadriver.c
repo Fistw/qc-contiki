@@ -1,6 +1,7 @@
 #include "tdoa_decadriver.h"
 #include "decadriver/deca_regs.h"
 #include "decadriver/deca_device_api.h"
+#include "project_common_conf.h"
 
 void dwGetSystemTimestamp(dwTime_t *time)
 {
@@ -37,7 +38,7 @@ uint8_t dwStartTransmit(dwTime_t *txTime)
 //	printf("before: %d\n", dwt_read32bitreg(SYS_STATUS_ID));
     dwt_forcetrxoff();
 //	printf("after: %d\n", dwt_read32bitreg(SYS_STATUS_ID));
-    txTime->full -= 16455;
+    txTime->full -= antennadelay_CONFIG;
     dwt_setdelayedtrxtime(txTime->high32);
     /* Radio starts listening certain delay (in UWB microseconds) after TX */
     dwt_setrxaftertxdelay(0);
