@@ -6,7 +6,7 @@
 #ifdef UWB_TYPE_TAG_CONFIG
 
 // UWB人员标签（当编译AGV标签时，注释此预定义）
-#define UWB_TYPE_PERSON_CONFIG
+//#define UWB_TYPE_PERSON_CONFIG
 
 #endif
 

@@ -18,6 +18,7 @@
 #include "decadriver/deca_regs.h"
 #include "decadriver/deca_device_api.h"
 #include "anchor_conf.h"
+#include "tdoa.h"
 
 // 根据设定的协议，定义数据包结构体及相关变量
 // Time length of the preamble
@@ -81,8 +82,8 @@ typedef struct
 
     // 协议内容
     uint8_t seqNr;
-    uint32_t rxTimeStamp;
-    uint32_t txTimeStamp; //???
+    uint64_t rxTimeStamp;
+    uint64_t txTimeStamp; //???
     uint16_t distance;
     uint32_t distanceUpdateTime;
     bool isDataGoodForTransmission; //???
@@ -99,7 +100,7 @@ static struct ctx_s
 
     // Header部分的数据
     uint8_t seqNr;   // 最近发送的包的序列号
-    uint32_t txTime; // 最近发送的包的发送时间戳，由UWB标记
+    uint64_t txTime; // 最近发送的包的发送时间戳，由UWB标记
 
     uint32_t nextTxTick; // 下一次发送包的发送时间(system clock ticks)
     int averageTxDelay;  // ms
@@ -117,50 +118,50 @@ static struct ctx_s
     uint8_t anchorRxCount[ID_COUNT];                 //这个列表储存收到其他Anchor发送包的次数，比如收到过id为a的Anchor发送的数据，anchorRxCount[a]就为收到过的次数
 } ctx;                                               // 定义了一个ctx_s的结构体变量 ctx
 
-// Packet formats
-#define PACKET_TYPE_TDOA3 0x30
-#define PACKET_TYPE_AVOID 0x01
-
-// https://wiki.bitcraze.io/doc:lps:tdoa3:protocol
-// TDoA Anchor protocol V3的头部定义
-typedef struct
-{
-    uint8_t type;
-    uint8_t seq;
-    uint32_t txTimeStamp;
-    uint8_t anchorCoordinate[6];
-    uint8_t remoteCount;
-} __attribute__((packed)) rangePacketHeader3_t;
-
-// 两种remote Anchor Data定义：是否包含distance
-typedef struct
-{
-    uint8_t id;
-    uint8_t seq;
-    uint32_t rxTimeStamp;
-    uint16_t distance;
-} __attribute__((packed)) remoteAnchorDataFull_t;
-
-typedef struct
-{
-    uint8_t id;
-    uint8_t seq;
-    uint32_t rxTimeStamp;
-} __attribute__((packed)) remoteAnchorDataShort_t;
-
-// packet的定义？
-typedef struct
-{
-    rangePacketHeader3_t header;
-    uint8_t remoteAnchorData; //data部分的定义？
-} __attribute__((packed)) rangePacket3_t;
-
-// 定义人员安全避让功能的帧负载格式
-typedef struct 
-{
-    uint8_t type;
-    uint8_t personCoordinate[4];
-} __attribute__((packed)) avoidPacket_t;
+//// Packet formats
+//#define PACKET_TYPE_TDOA3 0x30
+//#define PACKET_TYPE_AVOID 0x01
+//
+//// https://wiki.bitcraze.io/doc:lps:tdoa3:protocol
+//// TDoA Anchor protocol V3的头部定义
+//typedef struct
+//{
+//    uint8_t type;
+//    uint8_t seq;
+//    uint64_t txTimeStamp;
+//    uint8_t anchorCoordinate[6];
+//    uint8_t remoteCount;
+//} __attribute__((packed)) rangePacketHeader3_t;
+//
+//// 两种remote Anchor Data定义：是否包含distance
+//typedef struct
+//{
+//    uint8_t id;
+//    uint8_t seq;
+//    uint64_t rxTimeStamp;
+//    uint16_t distance;
+//} __attribute__((packed)) remoteAnchorDataFull_t;
+//
+//typedef struct
+//{
+//    uint8_t id;
+//    uint8_t seq;
+//    uint64_t rxTimeStamp;
+//} __attribute__((packed)) remoteAnchorDataShort_t;
+//
+//// packet的定义？
+//typedef struct
+//{
+//    rangePacketHeader3_t header;
+//    uint8_t remoteAnchorData; //data部分的定义？
+//} __attribute__((packed)) rangePacket3_t;
+//
+//// 定义人员安全避让功能的帧负载格式
+//typedef struct
+//{
+//    uint8_t type;
+//    uint8_t personCoordinate[4];
+//} __attribute__((packed)) avoidPacket_t;
 
 
 // 重置AnchorRxCount列表
@@ -349,17 +350,17 @@ static void updateAnchorLists()
        freq = ANCHOR_MIN_TX_FREQ;
    }
 //    ctx.averageTxDelay = 1000.0 / freq;
-    ctx.averageTxDelay = 50;
+    ctx.averageTxDelay = 100;
     purgeData();
 }
 
-static double calculateClockCorrection(anchorContext_t *anchorCtx, int remoteTxSeqNr, uint32_t remoteTx, uint32_t rx)
+static double calculateClockCorrection(anchorContext_t *anchorCtx, int remoteTxSeqNr, uint64_t remoteTx, uint64_t rx)
 {
     double result = 0.0d;
 
     // Assigning to uint32_t truncates the diffs and takes care of wrapping clocks
-    uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
-    uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
+    uint64_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
+    uint64_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
 
 //    printf("tickCountRemote:::%u, remoteTx:::%u, anchorCtx->txTimeStamp:::%u\n", tickCountRemote, remoteTx, anchorCtx->txTimeStamp);
 //    printf("tickCountLocal:::%u, rx:::%u, anchorCtx->rxTimeStamp:::%u\n", tickCountLocal, rx, anchorCtx->rxTimeStamp);
@@ -420,7 +421,7 @@ static bool updateClockCorrection(anchorContext_t *anchorCtx, double clockCorrec
     return sampleIsAccepted;
 }
 
-static bool extractFromPacket(const rangePacket3_t *rangePacket, uint32_t *remoteRx, uint8_t *remoteRxSeqNr)
+static bool extractFromPacket(const rangePacket3_t *rangePacket, uint64_t *remoteRx, uint8_t *remoteRxSeqNr)
 {
     const void *anchorDataPtr = &rangePacket->remoteAnchorData;
     //chenxin?这个循环什么意思，难道有多个remote date section段？
@@ -451,18 +452,19 @@ static bool extractFromPacket(const rangePacket3_t *rangePacket, uint32_t *remot
     return false;
 }
 
-static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
+static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr, uint64_t remoteTx, uint64_t remoteRx, uint64_t rx)
 { //chenxin:好像是计算基站0，1之间的tof，不过这样的话clockCorrection也就是基站0，1之间的了
     // Check that the remote received seq nr is our latest tx seq nr
     if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d)
     {
-        uint32_t localTime = rx - ctx.txTime;
-        uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
-        uint32_t distance = (localTime - remoteTime) / 2;
-        printf("localTx=%u, remoteRx=%u, remoteTx=%u, localRx=%u\n", ctx.txTime, remoteRx, remoteTx, rx);
+        uint64_t localTime = rx - ctx.txTime;
+        uint64_t remoteTime = (uint64_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
+        uint16_t distance = (localTime - remoteTime) / 2;
+        printf("localTx=%llu, remoteRx=%llu, remoteTx=%llu, localRx=%llu\n", ctx.txTime, remoteRx, remoteTx, rx);
         printf("clockCorrection=%lf, distance=%u\n", anchorCtx->clockCorrection, distance);
 
-        return distance & 0xfffful;
+//        return distance & 0xfffful;
+        return distance;
     }
     else
     {
@@ -470,7 +472,7 @@ static uint16_t calculateDistance(anchorContext_t *anchorCtx, int remoteRxSeqNr,
     }
 }
 
-static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
+static void handleRangePacket(const uint64_t rxTime, const packet_t *rxPacket)
 {
     const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
     ctx.anchorRxCount[remoteAnchorId]++;
@@ -478,9 +480,9 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     if (anchorCtx)
     {
     	const rangePacket3_t *rangePacket = (rangePacket3_t *)rxPacket->payload;
-        uint32_t remoteTx = rangePacket->header.txTimeStamp;
+        uint64_t remoteTx = rangePacket->header.txTimeStamp;
         uint8_t remoteTxSeqNr = rangePacket->header.seq;
-        printf("Receive remoteId:::%d, remoteTx:::%u, remoteSeqNr:::%d\n", remoteAnchorId, remoteTx, remoteTxSeqNr);
+        printf("Receive remoteId:::%d, remoteTx:::%llu, remoteSeqNr:::%d\n", remoteAnchorId, remoteTx, remoteTxSeqNr);
 
         double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
         printf("updateClockCorrection return False!!!\n");
@@ -488,7 +490,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
         {
         	printf("updateClockCorrection return True!!!\n");
             anchorCtx->isDataGoodForTransmission = true;
-            uint32_t remoteRx = 0;
+            uint64_t remoteRx = 0;
             uint8_t remoteRxSeqNr = 0;
             bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
             printf("dataFound is %d\n", dataFound);
@@ -519,7 +521,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t *rxPacket)
     }
 }
 
-void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t tx_stamp)
+void handleRxPacket(uint64_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint64_t tx_stamp)
 {
     static packet_t rxPacket;
     uint8_t *prxPacket = &rxPacket;
@@ -542,7 +544,7 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     	if(index != 0xff){
     		anchorContext_t* panchorCtx = &ctx.anchorCtx[index];
     	double dd = (double)panchorCtx->distance/(499.2e6*128)*299792458;
-    	printf("anchorId:::%d, distance(tick):::%d, distance:::%lf\n", panchorCtx->id, panchorCtx->distance, dd);
+    	printf("anchorId:::%d, distance(tick):::%u, distance:::%lf\n", panchorCtx->id, panchorCtx->distance, dd);
     	}
     }
 }
@@ -598,7 +600,7 @@ static int populateTxData(float* array, rangePacket3_t *rangePacket)
     tmp[3] = (uint8_t)((coo[1]-(uint8_t)coo[1])*1e2);
     tmp[4] = (uint8_t)coo[2];
     tmp[5] = (uint8_t)((coo[2]-(uint8_t)coo[2])*1e2);
-    printf("Transmite id:::%d, txTime:::%u, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
+    printf("Transmite id:::%d, txTime:::%llu, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
     for(int i = 0; i < 6; i++)
         printf("tmp[%d]=%d ",i,tmp[i]);
     uint8_t remoteAnchorCount = 0;
@@ -704,7 +706,7 @@ void setupTx(float* array)
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible();
     txTime.full += antennadelay_CONFIG;
 #ifndef UWB_TYPE_PERSON_CONFIG
-	ctx.txTime = txTime.low32;
+	ctx.txTime = txTime.full;
 	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
 #endif
 	setTxData(array);

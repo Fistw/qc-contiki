@@ -5,7 +5,7 @@
 #include "tdoa_decadriver.h"
 #include "tag_conf.h"
 
-void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint32_t regTxTime);
+void handleRxPacket(uint64_t rxTime, const uint8_t *packetbuf, const uint16_t data_len, uint64_t regTxTime);
 
 uint32_t tdoa3UwbEvent(dwDevice_t *dev);
 void tdoa3Init(uwbConfig_t *config);

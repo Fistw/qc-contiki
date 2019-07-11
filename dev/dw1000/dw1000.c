@@ -149,13 +149,13 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     // dw1000_range_reset();
     // rx_rng_ok_cb(cb_data);
     dwt_readrxtimestamp(rxTime.raw);
-    printf("rxTime=%u\n", rxTime.low32);
+    printf("rxTime=%llu\n", rxTime.full);
     dwTime_t rx_rawst = {.full = 0};
     dwt_readrxrawst(rx_rawst.raw);
     uint16_t rxAntenna;
     dwt_readrxantennadelay(&rxAntenna);
-    printf("rx_rawst:::%u, rxTime:::%u, antenna=rx_rawst-rxTime:::%u, rxAntenna:::%u\n",
-            rx_rawst.low32, rxTime.low32, rx_rawst.low32-rxTime.low32, rxAntenna);
+    printf("rx_rawst:::%llu, rxTime:::%llu, antenna=rx_rawst-rxTime:::%llu, rxAntenna:::%u\n",
+            rx_rawst.full, rxTime.full, rx_rawst.full-rxTime.full, rxAntenna);
 #endif
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
@@ -224,8 +224,8 @@ tx_conf_cb(const dwt_cb_data_t *cb_data)
     dwt_readtxrawst(tx_rawst.raw);
     uint16_t txAntenna;
     dwt_readtxantennadelay(&txAntenna);
-    printf("tx_stamp:::%u, tx_rawst:::%u, antenna=tx_stamp-tx_rawst:::%u, txAntenna:::%u\n",
-            tx_stamp.low32, tx_rawst.low32, tx_stamp.low32-tx_rawst.low32, txAntenna);
+    printf("tx_stamp:::%llu, tx_rawst:::%llu, antenna=tx_stamp-tx_rawst:::%llu, txAntenna:::%u\n",
+            tx_stamp.full, tx_rawst.full, tx_stamp.full-tx_rawst.full, txAntenna);
 	//printf("%d\n", cb_data->status);
     /* Set LED PC9 */
     /*LEDS_TOGGLE(LEDS_ORANGE); */
@@ -573,9 +573,9 @@ PROCESS_THREAD(dw1000_process, ev, data)
         /* Copy the received frame to packetbuf */
         dw1000_radio_read(packetbuf_dataptr(), data_len);
 #ifdef UWB_TYPE_TAG_CONFIG
-        handleTagRxPacket(rxTime.low32, packetbuf_dataptr(), data_len);
+        handleTagRxPacket(rxTime.full, packetbuf_dataptr(), data_len);
 #else
-        handleRxPacket(rxTime.low32, packetbuf_dataptr(), data_len, tx_stamp.low32); //data_len不包括2字节的crc
+        handleRxPacket(rxTime.full, packetbuf_dataptr(), data_len, tx_stamp.full); //data_len不包括2字节的crc
 #endif
         packetbuf_set_datalen(data_len);
 

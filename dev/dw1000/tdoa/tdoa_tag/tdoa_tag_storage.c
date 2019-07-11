@@ -5,7 +5,7 @@
 // All times in milli seconds
 //#define TOF_VALIDITY_PERIOD (2 * 1000)
 #define TOF_VALIDITY_PERIOD (3 * 1000)
-#define REMOTE_DATA_VALIDITY_PERIOD 30
+#define REMOTE_DATA_VALIDITY_PERIOD 100
 #define ANCHOR_POSITION_VALIDITY_PERIOD (2 * 1000)
 #define ANCHOR_ACTIVE_VALIDITY_PERIOD (2 * 1000)
 
@@ -65,7 +65,7 @@ bool tdoaStorageGetCreateAnchorCtx(tdoaAnchorInfo_t anchorStorage[], const uint8
     {
         newAnchorInfo = initializeSlot(anchorStorage, oldestSlot, anchor);
     }
-
+    printf("firstUninitializedSlot=%d,oldestSlot=%d\n",firstUninitializedSlot,oldestSlot);
     anchorCtx->anchorInfo = newAnchorInfo;
     return false;
 }

@@ -18,6 +18,6 @@
 #define antennadelay_CONFIG     16420
 
 // UWB标签类型（当编译UWB基站时，注释此预定义）
-//#define UWB_TYPE_TAG_CONFIG
+#define UWB_TYPE_TAG_CONFIG
 
 #endif /* PROJECT_COMMON_CONF_H_ */

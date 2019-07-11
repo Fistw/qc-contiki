@@ -37,7 +37,7 @@ void tdoaEngineInit(tdoaEngineState_t *engineState, const uint32_t now_ms, tdoaE
     engineState->tsFreq = UWB_TS_FREQ;
 }
 
-#define TRUNCATE_TO_ANCHOR_TS_BITMAP 0x00FFFFFFFF
+#define TRUNCATE_TO_ANCHOR_TS_BITMAP 0xFFFFFFFFFF
 uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
 {
     return fullTimeStamp & TRUNCATE_TO_ANCHOR_TS_BITMAP;
@@ -75,7 +75,7 @@ static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t 
 
     const int64_t latest_rxAn_by_T_in_cl_T = tdoaStorageGetRxTime(anchorCtx);
     const int64_t latest_txAn_in_cl_An = tdoaStorageGetTxTime(anchorCtx);
-
+    printf("rxAn_by_T_in_cl_T-latest_txAn_in_cl_An=%lf\n",(double)(rxAn_by_T_in_cl_T-latest_txAn_in_cl_An)/499.2e6/128);
     if (latest_rxAn_by_T_in_cl_T != 0 && latest_txAn_in_cl_An != 0)
     {
         double clockCorrectionCandidate = clockCorrectionEngineCalculate(rxAn_by_T_in_cl_T, latest_rxAn_by_T_in_cl_T, txAn_in_cl_An, latest_txAn_in_cl_An, TRUNCATE_TO_ANCHOR_TS_BITMAP);
@@ -90,7 +90,7 @@ static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t 
         //     }
         // }
     }
-
+    printf("sampleIsReliable=%d\n",sampleIsReliable);
     return sampleIsReliable;
 }
 
@@ -134,6 +134,7 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
 
     int remoteCount = 0;
     tdoaStorageGetRemoteSeqNrList(anchorCtx, &remoteCount, seqNr, id);
+    printf("remotecount=%d\n",remoteCount);
 
     uint32_t now_ms = anchorCtx->currentTime_ms;
 
@@ -159,6 +160,7 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
             }
         }
     }
+    printf("count=%d\n",count);
     if(count == 3){
         return true;
     }
@@ -193,7 +195,7 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
         tdoaAnchorContext_t otherAnchorCtxs[3];
         if (findSuitableAnchor(engineState, otherAnchorCtxs, anchorCtx))
         {
-//            printf("found suitable anchor\n");
+            printf("found suitable anchor\n");
             // engineState->stats.suitableDataFound++;
             // 计算距离差
             double tdoaDistDiffs[3];
