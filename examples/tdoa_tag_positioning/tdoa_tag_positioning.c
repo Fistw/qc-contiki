@@ -29,7 +29,7 @@ PROCESS_THREAD(tdoa_tag_positioning, ev, data)
 
 #ifdef UWB_TYPE_PERSON_CONFIG
     // 设置发射功率：15db=0010,0000、33.5db=0001,1111
-    static dwt_txconfig_t txConfig = {.PGdly=txPGdly_CONFIG, .power=txPower_CONFIG}；
+    static dwt_txconfig_t txConfig = {.PGdly=txPGdly_CONFIG, .power=txPower_CONFIG};
     /* 关闭智能功率调节 */
     dwt_setsmarttxpower(0);
     /* 设置tx功率 */

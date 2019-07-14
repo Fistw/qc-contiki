@@ -65,7 +65,7 @@ bool tdoaStorageGetCreateAnchorCtx(tdoaAnchorInfo_t anchorStorage[], const uint8
     {
         newAnchorInfo = initializeSlot(anchorStorage, oldestSlot, anchor);
     }
-    printf("firstUninitializedSlot=%d,oldestSlot=%d\n",firstUninitializedSlot,oldestSlot);
+//    printf("firstUninitializedSlot=%d,oldestSlot=%d\n",firstUninitializedSlot,oldestSlot);
     anchorCtx->anchorInfo = newAnchorInfo;
     return false;
 }

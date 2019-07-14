@@ -44,7 +44,7 @@ static int updateRemoteData(tdoaAnchorContext_t *anchorCtx, const void *payload)
 {
   const rangePacket3_t *packet = (rangePacket3_t *)payload;
   const void *anchorDataPtr = &packet->remoteAnchorData;
-  printf("remoteCount=%d\n",packet->header.remoteCount);
+//  printf("remoteCount=%d\n",packet->header.remoteCount);
   for (uint8_t i = 0; i < packet->header.remoteCount; i++)
   {
     remoteAnchorDataFull_t *anchorData = (remoteAnchorDataFull_t *)anchorDataPtr;
@@ -98,9 +98,9 @@ void handleTdoaPacket(uint64_t rxTime, const packet_t *prxPacket)
   // uint32_t remoteTx = packet->header.txTimeStamp;
   const int64_t txAn_in_cl_An = packet->header.txTimeStamp;
   uint8_t seqNr = packet->header.seq;
-  uint8_t* tmp = packet->header.anchorCoordinate;
-  for(int i = 0; i < 6; i++)
-    printf("tmp[%d]=%d ",i,tmp[i]);
+  int8_t* tmp = packet->header.anchorCoordinate;
+//  for(int i = 0; i < 6; i++)
+//    printf("tmp[%d]=%d ",i,tmp[i]);
   //统计收包率
   printf("Debug: get packet from %d, seqNr=%d, now is %u\n", anchorId, seqNr, clock_time());
 
@@ -142,20 +142,18 @@ void handleTdoaPacket(uint64_t rxTime, const packet_t *prxPacket)
 
   // 更新数据
   int rangeDataLength = updateRemoteData(&anchorCtx, packet);
-  uint32_t haha = clock_time();
-  for(int i = 0; i < 16; i++){
-    if(engineState.anchorInfoArray[i].isInitialized){
-    	printf("id=%d,seqNr=%d,",engineState.anchorInfoArray[i].id,engineState.anchorInfoArray[i].seqNr);
-    	for(int j = 0; j < 16; j++){
-    		if(engineState.anchorInfoArray[i].tof[j].endOfLife > haha)
-    			printf("tof:id=%d,tof=%lld,",engineState.anchorInfoArray[i].tof[j].id,engineState.anchorInfoArray[i].tof[j].tof);
-    		if(engineState.anchorInfoArray[i].remoteAnchorData[j].endOfLife > haha)
-    			printf("remoteData:id=%d,seqnr=%d,",engineState.anchorInfoArray[i].remoteAnchorData[j].id,engineState.anchorInfoArray[i].remoteAnchorData[j].seqNr);
-    	}
-    }
-
-
-  }
+//  uint32_t haha = clock_time();
+//  for(int i = 0; i < 16; i++){
+//    if(engineState.anchorInfoArray[i].isInitialized){
+//    	printf("id=%d,seqNr=%d,",engineState.anchorInfoArray[i].id,engineState.anchorInfoArray[i].seqNr);
+//    	for(int j = 0; j < 16; j++){
+//    		if(engineState.anchorInfoArray[i].tof[j].endOfLife > haha)
+//    			printf("tof:id=%d,tof=%lld,",engineState.anchorInfoArray[i].tof[j].id,engineState.anchorInfoArray[i].tof[j].tof);
+//    		if(engineState.anchorInfoArray[i].remoteAnchorData[j].endOfLife > haha)
+//    			printf("remoteData:id=%d,seqnr=%d,",engineState.anchorInfoArray[i].remoteAnchorData[j].id,engineState.anchorInfoArray[i].remoteAnchorData[j].seqNr);
+//    	}
+//    }
+//  }
   // 计算位置
   tdoaEngineProcessPacket(&engineState, &anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
   // 设置rxtime和xtime
@@ -167,8 +165,8 @@ void handleTdoaPacket(uint64_t rxTime, const packet_t *prxPacket)
 void handleAvoidPacket(uint32_t rxTime, const packet_t *prxPacket)
 {
 
-#ifndef UWB_TYPE_PERSON_CONFIG
-  uint8_t* coor = &prxPacket->payload[1];
+#ifdef UWB_TYPE_TAG_CONFIG
+  int8_t* coor = &prxPacket->payload[1];
   point_t personCoor = {
     .x = coor[0]+coor[1]*1e-2,
     .y = coor[2]+coor[3]*1e-2,

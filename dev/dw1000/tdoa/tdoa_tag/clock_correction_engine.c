@@ -91,8 +91,8 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
   bool sampleIsReliable = false;
 
   const double currentClockCorrection = storage->clockCorrection;
-  printf("storage clock_correction: %lf \n", currentClockCorrection);
-  printf("new_clock_correction: %lf \n", clockCorrectionCandidate);
+//  printf("storage clock_correction: %lf \n", currentClockCorrection);
+//  printf("new_clock_correction: %lf \n", clockCorrectionCandidate);
 
   const double difference = clockCorrectionCandidate - currentClockCorrection;
 
@@ -105,8 +105,7 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
   logClockCorrectionCandidate = scaleValueForLogging(clockCorrectionCandidate);
 #endif
 
-//  if (-CLOCK_CORRECTION_ACCEPTED_NOISE < difference && difference < CLOCK_CORRECTION_ACCEPTED_NOISE) {
-  	if(true){
+  if (-CLOCK_CORRECTION_ACCEPTED_NOISE < difference && difference < CLOCK_CORRECTION_ACCEPTED_NOISE) {
 	// Simple low pass filter
     const double newClockCorrection = currentClockCorrection * CLOCK_CORRECTION_FILTER + clockCorrectionCandidate * (1.0 - CLOCK_CORRECTION_FILTER);
 
@@ -122,7 +121,6 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
       }
     }
   }
-  printf("clockCorrectionEngineUpdate:sample=%d\n",sampleIsReliable);
   return sampleIsReliable;
 }
 

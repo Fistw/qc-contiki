@@ -572,10 +572,10 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
         /* Copy the received frame to packetbuf */
         dw1000_radio_read(packetbuf_dataptr(), data_len);
-#ifdef UWB_TYPE_TAG_CONFIG
-        handleTagRxPacket(rxTime.full, packetbuf_dataptr(), data_len);
-#else
+#ifdef UWB_TYPE_ANCHOR_CONFIG
         handleRxPacket(rxTime.full, packetbuf_dataptr(), data_len, tx_stamp.full); //data_len不包括2字节的crc
+#else
+        handleTagRxPacket(rxTime.full, packetbuf_dataptr(), data_len);
 #endif
         packetbuf_set_datalen(data_len);
 

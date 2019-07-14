@@ -198,7 +198,7 @@ bool calcTagInnerCoodinate(point_t* pTagCrd)
 		changeAxisFromInnerToOuter(&tmpCrd2);
 
 		//z轴过滤阈值=1
-		if(fabs(tmpCrd1.z - AGV_Z_AXIS_CONFIG) <= Z_AXIS_FILTER_CONFIG || 
+		if(fabs(tmpCrd1.z - AGV_Z_AXIS_CONFIG) <= Z_AXIS_FILTER_CONFIG ||
            fabs(tmpCrd2.z - AGV_Z_AXIS_CONFIG) <= Z_AXIS_FILTER_CONFIG){
 			if(fabs(tmpCrd1.z - AGV_Z_AXIS_CONFIG) < fabs(tmpCrd2.z - AGV_Z_AXIS_CONFIG)){
 				pTagCrd->x = tmpCrd1.x;
@@ -211,6 +211,18 @@ bool calcTagInnerCoodinate(point_t* pTagCrd)
 			}
 			return true;
 		}
+	}else{
+		printf("calTagInnerCoodinate:dir is badly\n");
+//		point_t tmpCrd1;
+//		//第一个点
+//		*x = (-e)/(2*d);
+//		*y = g*(*x)+h;
+//		*z = k*(*x)+l;
+//		changeAxisFromInnerToOuter(&tmpCrd1);
+//		pTagCrd->x = tmpCrd1.x;
+//		pTagCrd->y = tmpCrd1.y;
+//		pTagCrd->z = tmpCrd1.z;
+//		return true;
 	}
 	return false;
 }

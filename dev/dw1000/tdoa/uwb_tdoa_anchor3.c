@@ -350,7 +350,7 @@ static void updateAnchorLists()
        freq = ANCHOR_MIN_TX_FREQ;
    }
 //    ctx.averageTxDelay = 1000.0 / freq;
-    ctx.averageTxDelay = 100;
+    ctx.averageTxDelay = TX_FREQUENCY_CONFIG;
     purgeData();
 }
 
@@ -588,18 +588,18 @@ static dwTime_t findTransmitTimeAsSoonAsPossible()
 // 填充TX 数据
 static int populateTxData(float* array, rangePacket3_t *rangePacket)
 {
-#ifndef UWB_TYPE_PERSON_CONFIG
+#ifdef UWB_TYPE_ANCHOR_CONFIG
     // rangePacket->header.type already populated
     rangePacket->header.seq = ctx.seqNr;
     rangePacket->header.txTimeStamp = ctx.txTime;
-    uint8_t* tmp = rangePacket->header.anchorCoordinate;
+    int8_t* tmp = rangePacket->header.anchorCoordinate;
     float coo[3] = ANCHOR_AXIS_CONFIG;
-    tmp[0] = (uint8_t)coo[0];
-    tmp[1] = (uint8_t)((coo[0]-(uint8_t)coo[0])*1e2);
-    tmp[2] = (uint8_t)coo[1];
-    tmp[3] = (uint8_t)((coo[1]-(uint8_t)coo[1])*1e2);
-    tmp[4] = (uint8_t)coo[2];
-    tmp[5] = (uint8_t)((coo[2]-(uint8_t)coo[2])*1e2);
+    tmp[0] = (int8_t)coo[0];
+    tmp[1] = (int8_t)((coo[0]-(int8_t)coo[0])*1e2);
+    tmp[2] = (int8_t)coo[1];
+    tmp[3] = (int8_t)((coo[1]-(int8_t)coo[1])*1e2);
+    tmp[4] = (int8_t)coo[2];
+    tmp[5] = (int8_t)((coo[2]-(int8_t)coo[2])*1e2);
     printf("Transmite id:::%d, txTime:::%llu, seqNr:::%d\n", ctx.anchorId, ctx.txTime, ctx.seqNr);
     for(int i = 0; i < 6; i++)
         printf("tmp[%d]=%d ",i,tmp[i]);
@@ -636,12 +636,13 @@ static int populateTxData(float* array, rangePacket3_t *rangePacket)
     rangePacket->header.remoteCount = remoteAnchorCount;
 
     return (uint8_t *)anchorDataPtr - (uint8_t *)rangePacket;
-#else
+#endif
+#ifdef UWB_TYPE_PERSON_CONFIG
     avoidPacket_t* coo = (avoidPacket_t*)rangePacket;
-    coo->personCoordinate[0] = (uint8_t)array[0];
-    coo->personCoordinate[1] = (uint8_t)((array[0]-(uint8_t)array[0])*1e2);
-    coo->personCoordinate[2] = (uint8_t)array[1];
-    coo->personCoordinate[3] = (uint8_t)((array[1]-(uint8_t)array[1])*1e2);
+    coo->personCoordinate[0] = (int8_t)array[0];
+    coo->personCoordinate[1] = (int8_t)((array[0]-(int8_t)array[0])*1e2);
+    coo->personCoordinate[2] = (int8_t)array[1];
+    coo->personCoordinate[3] = (int8_t)((array[1]-(int8_t)array[1])*1e2);
 
     return 5;
 #endif
@@ -660,10 +661,11 @@ static void setTxData(float* array)
     {
 
         memcpy(txPacket.sourceAddress, base_address, 8);
-#ifndef UWB_TYPE_PERSON_CONFIG
+#ifdef UWB_TYPE_ANCHOR_CONFIG
         txPacket.sourceAddress[0] = ctx.anchorId;
         txPacket.payload[0] = PACKET_TYPE_TDOA3;
-#else
+#endif
+#ifdef UWB_TYPE_PERSON_CONFIG
         txPacket.sourceAddress[0] = 0xff;
         txPacket.payload[0] = PACKET_TYPE_AVOID;
 #endif
@@ -705,7 +707,7 @@ void setupTx(float* array)
 {
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible();
     txTime.full += antennadelay_CONFIG;
-#ifndef UWB_TYPE_PERSON_CONFIG
+#ifdef UWB_TYPE_ANCHOR_CONFIG
 	ctx.txTime = txTime.full;
 	ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
 #endif
