@@ -78,7 +78,7 @@
    * \par    
    * where pi value is  3.14159265358979    
    */
-extern float sinTable_f32[];
+extern const float sinTable_f32[];
 
   /**
    * @brief  Fast approximation to the trigonometric sine function for floating-point data.

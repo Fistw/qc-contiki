@@ -238,15 +238,16 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 	// 	  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
 	// 										(int)(state.position.z*1000));
   if(fang(tdoaMeasurement, &tagCrd)){
-    printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
+    printf("Executed fang successed and taylor successed.\n");
+  }else{
+    printf("Executed fang failed and taylor successed.\n");
+    // printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
+  }
+  printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
 // 人员安全避让功能
 #ifdef UWB_TYPE_PERSON_CONFIG
       setupTx((float*)&tagCrd);
 #endif
-
-  }else{
-    printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
-  }
   // if(idx != -1){
   //   fangPutMatrix(queue, idx);
   //   if(calcTagCoordinate(&Am, (float*)b, &tagCrd))

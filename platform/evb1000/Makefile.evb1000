@@ -26,7 +26,7 @@ CONTIKI_TARGET_SOURCEFILES += tdoa_decadriver.c uwb.c uwb_tdoa_anchor3.c
 CONTIKI_TARGET_SOURCEFILES += tdoa_tag.c tdoa_tag_engine.c tdoa_tag_storage.c clock_correction_engine.c
 CONTIKI_TARGET_SOURCEFILES += arm_cos_f32.c arm_mat_inverse_f32.c arm_mat_mult_f32.c arm_mat_trans_f32.c arm_sin_f32.c
 //CONTIKI_TARGET_SOURCEFILES += outlierFilter.c sensors.c estimator_kalman.c
-CONTIKI_TARGET_SOURCEFILES += fang.c
+CONTIKI_TARGET_SOURCEFILES += 2dfang.c
 
 CONTIKI_SOURCEFILES += $(CONTIKI_TARGET_SOURCEFILES)
 

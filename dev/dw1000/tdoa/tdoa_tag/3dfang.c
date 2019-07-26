@@ -33,13 +33,15 @@ static bool filterTdoaMeasurement(tdoaMeasurement_t* m)
 /*
  * fang算法
  */
-bool fang(tdoaMeasurement_t* tdoa, point_t* pTagCrd){
-	if(fangGetTdoaMeasurement(tdoa)){
+bool fang_3D(tdoaMeasurement_t* tdoa, point_t* pTagCrd){
+    bool flag = false;
+    if(fangGetTdoaMeasurement(tdoa)){
 		getAnchorDistances();
 		createInnerAxis();
-		return calcTagInnerCoodinate(pTagCrd);
+	    flag = calcTagInnerCoodinate(pTagCrd);
+        // taylor(tdoaTriad, pTagCrd);
 	}
-	return false;
+	return flag;
 }
 
 /*
@@ -209,22 +211,77 @@ bool calcTagInnerCoodinate(point_t* pTagCrd)
 				pTagCrd->y = tmpCrd2.y;
 				pTagCrd->z = tmpCrd2.z;
 			}
+            printf("基站坐标：\n%d=(%f,%f,%f); %d=(%f,%f,%f); %d=(%f,%f,%f); %d=(%f,%f,%f)\n",
+                   tdoaTriad[0].idA,tdoaTriad[0].anchorPosition[0].x,tdoaTriad[0].anchorPosition[0].y,tdoaTriad[0].anchorPosition[0].z,
+                   tdoaTriad[0].idB,tdoaTriad[0].anchorPosition[1].x,tdoaTriad[0].anchorPosition[1].y,tdoaTriad[0].anchorPosition[1].z,
+                   tdoaTriad[1].idB,tdoaTriad[1].anchorPosition[1].x,tdoaTriad[1].anchorPosition[1].y,tdoaTriad[1].anchorPosition[1].z,
+                   tdoaTriad[2].idB,tdoaTriad[2].anchorPosition[1].x,tdoaTriad[2].anchorPosition[1].y,tdoaTriad[2].anchorPosition[1].z
+                   );
 			return true;
 		}
 	}else{
 		printf("calTagInnerCoodinate:dir is badly\n");
-//		point_t tmpCrd1;
-//		//第一个点
-//		*x = (-e)/(2*d);
-//		*y = g*(*x)+h;
-//		*z = k*(*x)+l;
-//		changeAxisFromInnerToOuter(&tmpCrd1);
-//		pTagCrd->x = tmpCrd1.x;
-//		pTagCrd->y = tmpCrd1.y;
-//		pTagCrd->z = tmpCrd1.z;
-//		return true;
 	}
 	return false;
+}
+
+/*
+ * taylor算法
+ */
+void taylor(tdoaMeasurement_t* tdoa, point_t* pTagCrd)
+{
+    float args[12], oldIncX, oldIncY, oldIncZ, incX, incY, incZ;
+    oldIncX = oldIncY = oldIncZ = 10;
+    do{
+        for(int i = 0; i < 3; i++)
+            createTaylorArgs(tdoa+i, pTagCrd, args+i*4);
+        // for(int i = 0; i < 2; i++){
+        //     for(int j = i+1; j < 3; j++){
+        //         incY += (args[i+5]-args[i+3]*args[i+2]/args[i])
+        //                /(args[i+4]-args[i+3]*args[i+1]/args[i]);
+        //         incX += (args[i+2]-args[i+1]*incY)/args[i];
+        //     }
+        // }
+        incX = ((args[5]*args[10]-args[9]*args[6])*(args[10]*args[3]-args[11]*args[2])
+               -(args[1]*args[10]-args[9]*args[2])*(args[10]*args[7]-args[11]*args[6]))
+              /((args[0]*args[10]-args[2]*args[8])*(args[10]*args[5]-args[6]*args[9])
+               -(args[4]*args[10]-args[8]*args[6])*(args[10]*args[1]-args[9]*args[2]));
+        incY = (((args[3]*args[10]-args[2]*args[11])*(args[10]*args[0]-args[8]*args[2]))*incX)
+               /(args[1]*args[10]-args[2]*args[9]);
+        incZ = (args[3]-args[0]*incX-args[1]*incY)/args[2];
+        if(isnormal(incX) && isnormal(incY) && isnormal(incZ) 
+                          && (fabs(incX)+fabs(incY)+fabs(incZ))<(fabs(oldIncX)+fabs(oldIncY)+fabs(oldIncZ))){
+            pTagCrd->x += incX; 
+            pTagCrd->y += incY;
+            pTagCrd->z += incZ;
+            oldIncX = incX, oldIncY = incY, oldIncZ = incZ;
+            printf("|incX|+|incY|+|incZ|=%f,tagCrd(%f,%f,%f)\n",fabs(incX)+fabs(incY)+fabs(incZ),pTagCrd->x,pTagCrd->y,pTagCrd->z);
+        }else
+        {
+            printf("taylor Divergence\n");
+            break;
+        }
+    }while((fabs(incX)+fabs(incY)+fabs(incZ)) < 0.1);
+}
+
+void createTaylorArgs(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* args)
+{
+    float *a,*b,*c,*d,R1,R2;
+    a=args, b=args+1, c=args+2, d=args+3;
+    point_t v;
+    createVector(tdoa->anchorPosition, pTagCrd, &v);
+    R1 = sqrtf(multipleVector(&v,&v));
+    createVector(tdoa->anchorPosition+1, pTagCrd, &v);
+    R2 = sqrtf(multipleVector(&v,&v));
+    // *a = ((R1*pTagCrd->x+R2*(tdoa->anchorPosition[0].x))
+    //      -(R1*tdoa->anchorPosition[1].x+R2*pTagCrd->x))/(R1*R2);
+    // *b = ((R1*pTagCrd->y+R2*(tdoa->anchorPosition[0].y))
+    //      -(R1*tdoa->anchorPosition[1].y+R2*pTagCrd->y))/(R1*R2);
+    // *c = tdoa->distanceDiff+R1-R2;
+    *a = (pTagCrd->x-tdoa->anchorPosition[1].x)/R2-(pTagCrd->x-tdoa->anchorPosition[0].x)/R1;
+    *b = (pTagCrd->y-tdoa->anchorPosition[1].y)/R2-(pTagCrd->y-tdoa->anchorPosition[0].y)/R1;
+    *c = (pTagCrd->z-tdoa->anchorPosition[1].z)/R2-(pTagCrd->z-tdoa->anchorPosition[0].z)/R1;
+    *d = tdoa->distanceDiff-(R2-R1);
 }
 
 /*
