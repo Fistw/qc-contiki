@@ -7,7 +7,9 @@ static void createVector(point_t* pstart, point_t* pend, point_t* vector);
 static float multipleVector(point_t* v1, point_t* v2);
 
 static void createMatrixAandb(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* argsA, float* argsb);
-static float calcnmd(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* d);
+
+float calcMinfuncF(tdoaMeasurement_t* tdoa, point_t* pTagCrd);
+float oneSearch(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* argsd);
 
 static void printFlag(arm_status s);
 
@@ -41,11 +43,11 @@ void taylor(tdoaMeasurement_t* tdoa, point_t* pTagCrd)
     float tmp4a[2][3];
     arm_matrix_instance_f32 tmp4m = {.numRows = 2,
                                      .numCols = 3,
-                                     .pData = tmp4a}; 
-    float nmd;                                                                   
+                                     .pData = tmp4a};        
+    float nmd;                                                           
     do{
         for(int i = 0; i < 3; i++)
-            createMatrixAandb(tdoa+i, pTagCrd, argsA+i*2, argsb+i);
+            createMatrixAandb(tdoa+i, pTagCrd, argsA+i, argsb+i);
         arm_status flag;
         if(flag = arm_mat_trans_f32(&A, &tmp1m)){
             printf("Execute trans(A) error,");
@@ -76,13 +78,10 @@ void taylor(tdoaMeasurement_t* tdoa, point_t* pTagCrd)
             printFlag(flag);
             printf("\n");
         }
-        nmd = 0;
-        for(int i = 0; i < 3; i++)
-            nmd += calcnmd(tdoa+i, pTagCrd, argsd);
-        nmd /= 3;
+        nmd = oneSearch(tdoa, pTagCrd, argsd);
         pTagCrd->x += nmd*argsd[0];
         pTagCrd->y += nmd*argsd[1];
-    }while(fabs(nmd) < 1e-6);
+    }while(fabs(nmd*argsd[0])+fabs(nmd*argsd[1]) < 1e-2);
 }
 
 void createMatrixAandb(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* argsA, float* argsb)
@@ -100,22 +99,55 @@ void createMatrixAandb(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* argsA, 
     *c = R2-R1-tdoa->distanceDiff;
 }
 
-float calcnmd(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* argsd)
+float oneSearch(tdoaMeasurement_t* tdoa, point_t* pTagCrd, float* argsd)
 {
-    float x1,y1,z1,x2,y2,z2,k1,k2,R21,R1,R2;
+    float l,r,nmd1,nmd2;
+    l = -1,r = 1;
+    nmd1 = l+0.382*(r-l),nmd2 = l+0.618*(r-l);
+    int count = 1;
+    do{
+        float funcF1, funcF2;
+        funcF1 = funcF2 = 0;
+        point_t tagCrd1 = {.x = pTagCrd->x+nmd1*argsd[0],
+                           .y = pTagCrd->y+nmd1*argsd[1],
+                           .z = pTagCrd->z};
+        point_t tagCrd2 = {.x = pTagCrd->x+nmd2*argsd[0],
+                           .y = pTagCrd->y+nmd2*argsd[1],
+                           .z = pTagCrd->z};
+        for(int i = 0; i < 3; i++){
+            funcF1 += calcfuncF(tdoa+i, &tagCrd1);
+            funcF2 += calcfuncF(tdoa+i, &tagCrd2);
+        }
+        printf("%dth iteration: r-l=%f, l=%f, nmd1=%f, "
+               "nmd2=%f, r=%f, funcF1=%f, funcF2=%f\n",count,r-l,l,nmd1,nmd2,r,funcF1,funcF2);
+        if(fabs(funcF1 - funcF2) < 1e-2){
+            l = nmd1,r = nmd2;
+            break;
+        }else if(funcF1 > funcF2){
+            l = nmd1;
+            nmd1 = nmd2;
+            nmd2 = l+0.618*(r-l);
+        }else{
+            r = nmd2;
+            nmd2 = nmd1;
+            nmd1 = l+0.382*(r-l);
+        }
+        count++;
+    }while(r-l > 0.01);
+    return (r-l)/2;
+}
+
+float calcMinfuncF(tdoaMeasurement_t* tdoa, point_t* pTagCrd)
+{
+    float x1,y1,z1,x2,y2,z2,x,y,z;
 
     x1 = tdoa->anchorPosition[0].x,y1 = tdoa->anchorPosition[0].y,z1 = tdoa->anchorPosition[0].z;
     x2 = tdoa->anchorPosition[1].x,y2 = tdoa->anchorPosition[1].y,z2 = tdoa->anchorPosition[1].z;
-    k1 = multipleVector(&tdoa->anchorPosition[0],&tdoa->anchorPosition[0]);
-    k2 = multipleVector(&tdoa->anchorPosition[1],&tdoa->anchorPosition[1]);
-    point_t v;
-    createVector(tdoa->anchorPosition, pTagCrd, &v);
-    R1 = sqrtf(multipleVector(&v,&v));
-    createVector(tdoa->anchorPosition+1, pTagCrd, &v);
-    R2 = sqrtf(multipleVector(&v,&v));
+    x = pTagCrd->x,y = pTagCrd->y,z = pTagCrd->z;
 
-    return(powf(R21,2)+2*R21*R1-k2+k1+2*(x2-x1)*pTagCrd->x+2*(y2-y1)*pTagCrd->y+2*(z2-z1)*pTagCrd->z)
-         /(-2*(x2-x1)*argsd[0]-2*(y2-y1)*argsd[1]);
+    return powf(sqrtf(powf(x2-x,2)+powf(y2-y,2)+powf(z2-z,2))
+               -sqrtf(powf(x1-x,2)+powf(y1-y,2)+powf(z1-z,2))
+               -tdoa->distanceDiff,2);
 }
 
 static void createVector(point_t* pstart, point_t* pend, point_t* vector)
