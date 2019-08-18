@@ -53,6 +53,7 @@
 #include "deca_regs.h"
 #include "tdoa/tdoa_decadriver.h"
 #include "project_common_conf.h"
+#include <math.h>
 // #include "tdoa/uwb_tdoa_anchor3.h"
 /*---------------------------------------------------------------------------*/
 #define DEBUG 0
@@ -157,6 +158,35 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     printf("rx_rawst:::%llu, rxTime:::%llu, antenna=rx_rawst-rxTime:::%llu, rxAntenna:::%u\n",
             rx_rawst.full, rxTime.full, rx_rawst.full-rxTime.full, rxAntenna);
 #endif
+
+    printf("fp_index=%d\n",dwt_read16bitoffsetreg(0x15, 5));
+
+    printf("fp_ampl1=%d\n",dwt_read16bitoffsetreg(0x15, 7));
+
+    printf("fp_ampl2=%d\n",dwt_read16bitoffsetreg(0x12, 2));
+
+    printf("fp_ampl3=%d\n",dwt_read16bitoffsetreg(0x12, 4));
+
+    printf("ppindx=%d\n",dwt_read16bitoffsetreg(0x2e, 0x1000));
+
+    printf("ppampl=%d\n",dwt_read16bitoffsetreg(0x2e, 0x1002));
+
+    printf("STD_NOISE=%d\n",dwt_read16bitoffsetreg(0x12, 0));
+
+    printf("LDE_THRESH=%d\n",dwt_read16bitoffsetreg(0x2e, 0));
+
+    printf("LDE_CFG1=0x%x\n",dwt_read8bitoffsetreg(0x2e, 0x0806));
+
+    printf("LDE_CFG2=0x%x\n",dwt_read16bitoffsetreg(0x2e, 0x0816));
+    float f1,f2,f3,A,N,C;
+    f1 = dwt_read16bitoffsetreg(0x15, 7);
+    f2 = dwt_read16bitoffsetreg(0x12, 2);
+    f3 = dwt_read16bitoffsetreg(0x12, 4);
+    A = 121.74;
+    N = dwt_read16bitoffsetreg(0x10, 2)>>4;
+    C = dwt_read16bitoffsetreg(0x12, 6);
+    printf("First path power level = %lfdBm\n",10*log10((powf(f1,2)+powf(f2,2)+powf(f3,2))/powf(N,2))-A);
+    printf("Rx level = %lfdBm\n",10*log10(C*powf(2,17)/powf(N,2))-A);    
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
     /* Set the appropriate event flag */

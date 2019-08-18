@@ -44,6 +44,9 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     dw1000_configure(&radio_config);
 
     printf("Process begin\n");
+    float a[3] = ANCHOR_AXIS_CONFIG;
+    printf("id = %d, antennadelay=%d, cor=(%f,%f,%f)\n",
+           anchorID_CONFIG, antennadelay_CONFIG, a[0], a[1], a[2]);
     uwbConfig = uwbGetConfig();
     tdoa3Init(uwbConfig);
     timeout_ms = tdoa3UwbEvent(dev);

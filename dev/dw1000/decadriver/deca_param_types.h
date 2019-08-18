@@ -17,6 +17,9 @@ extern "C" {
 #endif
 #include "deca_types.h"
 
+// 引入NTM寄存器设置
+#include "project_common_conf.h"
+
 #define NUM_BR 3
 #define NUM_PRF 2
 #define NUM_PACS 4
@@ -51,7 +54,7 @@ extern const uint8 chan_idx[NUM_CH_SUPPORTED];
 extern const double txpwr_compensation[NUM_CH];
 
 #define PEAK_MULTPLIER  (0x60) //3 -> (0x3 * 32) & 0x00E0
-#define N_STD_FACTOR    (13)
+#define N_STD_FACTOR    NTM_CONFIG
 #define LDE_PARAM1      (PEAK_MULTPLIER | N_STD_FACTOR)
 
 #define LDE_PARAM3_16 (0x1607)
