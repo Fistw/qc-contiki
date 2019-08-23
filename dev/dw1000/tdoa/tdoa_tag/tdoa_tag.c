@@ -23,7 +23,7 @@
 #include "fang.h"
 #include "uwb_tdoa_anchor3.h"
 
-static point_t tagCrd;
+static point_t tagCrd = {0,0,0,AGV_Z_AXIS_CONFIG};
 static tdoaEngineState_t engineState;
 
 #define PREAMBLE_LENGTH_S ( 128 * 1017.63e-9 ) //0.000130257
@@ -237,12 +237,13 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
   // printf("Tag position is (%d, %d, %d)(mm)!\n", (int)(state.position.x*1000),
 	// 	  	  	  	  	  	  	  	  	    (int)(state.position.y*1000),
 	// 										(int)(state.position.z*1000));
-  if(fang(tdoaMeasurement, &tagCrd)){
-    printf("Executed fang successed and taylor successed.\n");
-  }else{
-    printf("Executed fang failed and taylor successed.\n");
-    // printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
-  }
+//  if(fang(tdoaMeasurement, &tagCrd)){
+//    printf("Executed fang successed and taylor successed.\n");
+//  }else{
+//    printf("Executed fang failed and taylor successed.\n");
+//    // printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
+//  }
+  fang_2D(tdoaMeasurement, &tagCrd);
   printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
 // 人员安全避让功能
 #ifdef UWB_TYPE_PERSON_CONFIG

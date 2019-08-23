@@ -35,7 +35,7 @@ bool fang_2D(tdoaMeasurement_t* tdoa, point_t* pTagCrd){
     bool flag = false;
     if(fangGetTdoaMeasurement(tdoa)){
 	    flag = calcTagCoodinate(pTagCrd);
-        taylor(tdoaTriad, pTagCrd);
+//        taylor(tdoaTriad, pTagCrd);
 	}
 	return flag;
 }

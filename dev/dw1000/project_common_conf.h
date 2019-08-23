@@ -36,22 +36,22 @@
  * AGV标签独有配置
  */
 // AGV搭载UWB标签高度
-#define AGV_Z_AXIS_CONFIG       0
+#define AGV_Z_AXIS_CONFIG       0.2
 // 阈值设置
 // 使用AGV坐标z值过滤离群点，默认值=1
 #define Z_AXIS_FILTER_CONFIG    5
 // 检测基站共面，cos=0.4
 #define COPLANAR_FILTER_CONFIG  0.4
 // CIR检测阈值
-#define NTM_CONFIG
+#define NTM_CONFIG              0x69
 
 /*
  * 基站独有配置
  */
 // 基站ID
-#define anchorID_CONFIG             0x04
+#define anchorID_CONFIG             0x05
 // 基站坐标
-#define ANCHOR_AXIS_CONFIG    		{0, 4.627, 0}
+#define ANCHOR_AXIS_CONFIG    		{0.15, 8.863, 2.469}
 // 发包频率
 #define TX_FREQUENCY_CONFIG			100
 
