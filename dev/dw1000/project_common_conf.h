@@ -3,11 +3,11 @@
 
 // 编译时，保留相应类型预定义，注释其余两个预定义
 // UWB AGV标签
-//#define UWB_TYPE_AGV_CONFIG
+#define UWB_TYPE_AGV_CONFIG
 // UWB人员标签
 //#define UWB_TYPE_PERSON_CONFIG
 // UWB基站
-#define UWB_TYPE_ANCHOR_CONFIG
+//#define UWB_TYPE_ANCHOR_CONFIG
 
 /*
  * 共有配置
@@ -30,7 +30,7 @@
 #define txPower_CONFIG          0x1F1F1F1F
 
 //天线延迟
-#define antennadelay_CONFIG     16589
+#define antennadelay_CONFIG     16485
 
 /*
  * AGV标签独有配置
@@ -49,9 +49,9 @@
  * 基站独有配置
  */
 // 基站ID
-#define anchorID_CONFIG             0x05
+#define anchorID_CONFIG             0x03
 // 基站坐标
-#define ANCHOR_AXIS_CONFIG    		{0.15, 8.863, 2.469}
+#define ANCHOR_AXIS_CONFIG    		{0, 5.034, 0}
 // 发包频率
 #define TX_FREQUENCY_CONFIG			100
 

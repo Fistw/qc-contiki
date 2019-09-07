@@ -99,13 +99,13 @@ static inline float multipleVector(point_t* v1, point_t* v2)
     return (v1->x)*(v2->x)+(v1->y)*(v2->y)+(v1->z)*(v2->z);
 }
 
-void correctTimestamp(int64_t* ptime, float fpp, float rxp, tdoaAnchorContext_t* anchorCtx)
+void correctTimestamp(int64_t* ptime, double fpp, double rxp, tdoaAnchorContext_t* anchorCtx)
 {
-  float rx_fp = rxp - fpp;
-  float clk = anchorCtx->anchorInfo->clockCorrectionStorage.clockCorrection;
+  double rx_fp = rxp - fpp;
+  double clk = anchorCtx->anchorInfo->clockCorrectionStorage.clockCorrection;
   point_t tmp;
   createVector(&tagCrd, &anchorCtx->anchorInfo->position, &tmp);
-  float dis = sqrtf(multipleVector(&tmp, &tmp));
+  double dis = sqrtf(multipleVector(&tmp, &tmp));
 
   if(rxp <= -86.218){ // node#0
     if(fpp <= -96.212){ // node#1
@@ -127,14 +127,14 @@ void correctTimestamp(int64_t* ptime, float fpp, float rxp, tdoaAnchorContext_t*
             }else{
               *ptime += 220; // node#70
             }
-          } 
+          }
         }else{
           if(dis <= 8.33){ // node#10
             *ptime += 327; // node#79
           }else{
             *ptime += 390; // node#80
           }
-        } 
+        }
       }else{
         if(fpp <= -103.733){ // node#8
           if(rxp <= -89.347){ // node#13
@@ -245,7 +245,7 @@ void correctTimestamp(int64_t* ptime, float fpp, float rxp, tdoaAnchorContext_t*
         }else{
           if(rxp <= -79.643){ // node#38
             *ptime += 201; // node#71
-          }else{ 
+          }else{
             *ptime += 251; // node#72
           }
         }
@@ -306,7 +306,7 @@ void correctTimestamp(int64_t* ptime, float fpp, float rxp, tdoaAnchorContext_t*
   }
 }
 
-void handleTdoaPacket(float fp_power, float rx_power, uint64_t rxTime, const packet_t *prxPacket)
+void handleTdoaPacket(double fp_power, double rx_power, uint64_t rxTime, const packet_t *prxPacket)
 {
   const uint8_t anchorId = prxPacket->sourceAddress[0];
 
@@ -322,7 +322,7 @@ void handleTdoaPacket(float fp_power, float rx_power, uint64_t rxTime, const pac
 //    printf("tmp[%d]=%d ",i,tmp[i]);
   //统计收包率
   printf("Debug: get packet from %d, seqNr=%d, now is %u\n", anchorId, seqNr, clock_time());
-  printf("Debug: get packet from %d, txTimestamp=%llu\n", anchorId, txAn_in_cl_An);
+  printf("Debug: get packet from %d, txTimestamp=%lld\n", anchorId, txAn_in_cl_An);
   // process anchor packet in tag
   tdoaAnchorContext_t anchorCtx;
   uint32_t now_ms = clock_time();
@@ -331,9 +331,12 @@ void handleTdoaPacket(float fp_power, float rx_power, uint64_t rxTime, const pac
   tdoaStorageSetAnchorPosition(&anchorCtx, tmp[0]+tmp[1]*1e-2,tmp[2]+tmp[3]*1e-2,tmp[4]+tmp[5]*1e-2);
   
   // 决策树回归校正时间戳
-  if(!tagCrd.timestamp && anchorCtxExist)
-    correctTimestamp(&rxAn_by_T_in_cl_T, fp_power, rx_power, &anchorCtx);
-  printf("After Correction(rxTimestamp): %llu\n", rxAn_by_T_in_cl_T);
+  if(tagCrd.timestamp && anchorCtxExist){
+	  printf("Before execute correctTimestamp\n");
+	  printf("fp_power=%lf, rx_power=%lf\n", fp_power, rx_power);
+	  correctTimestamp(&rxAn_by_T_in_cl_T, fp_power, rx_power, &anchorCtx);
+  }
+  printf("After Correction(rxTimestamp): %lld, after - before: %lld\n", rxAn_by_T_in_cl_T, rxAn_by_T_in_cl_T-rxTime);
 
   // // 粗暴设置基站位置
   // if (anchorId == 1)
@@ -406,7 +409,7 @@ void handleAvoidPacket(uint32_t rxTime, const packet_t *prxPacket)
 
 }
 
-void handleTagRxPacket(float fp_power, float rx_power, uint64_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
+void handleTagRxPacket(double fp_power, double rx_power, uint64_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
 {
   int dataLength = data_len;
 
