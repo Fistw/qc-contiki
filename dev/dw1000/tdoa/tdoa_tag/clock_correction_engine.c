@@ -91,7 +91,7 @@ bool clockCorrectionEngineUpdate(clockCorrectionStorage_t* storage, const double
   bool sampleIsReliable = false;
 
   const double currentClockCorrection = storage->clockCorrection;
-//  printf("storage clock_correction: %lf \n", currentClockCorrection);
+  printf("Storaged clockCorrection: %lf \n", currentClockCorrection);
 //  printf("new_clock_correction: %lf \n", clockCorrectionCandidate);
 
   const double difference = clockCorrectionCandidate - currentClockCorrection;

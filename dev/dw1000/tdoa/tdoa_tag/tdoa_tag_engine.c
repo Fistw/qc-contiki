@@ -171,9 +171,9 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
     }
 }
 
-void tdoaEngineGetAnchorCtxForPacketProcessing(tdoaEngineState_t *engineState, const uint8_t anchorId, const uint32_t currentTime_ms, tdoaAnchorContext_t *anchorCtx)
+bool tdoaEngineGetAnchorCtxForPacketProcessing(tdoaEngineState_t *engineState, const uint8_t anchorId, const uint32_t currentTime_ms, tdoaAnchorContext_t *anchorCtx)
 {
-    tdoaStorageGetCreateAnchorCtx(engineState->anchorInfoArray, anchorId, currentTime_ms, anchorCtx);
+    return tdoaStorageGetCreateAnchorCtx(engineState->anchorInfoArray, anchorId, currentTime_ms, anchorCtx);
     // if (tdoaStorageGetCreateAnchorCtx(engineState->anchorInfoArray, anchorId, currentTime_ms, anchorCtx))
     // {
     //     engineState->stats.contextHitCount++;

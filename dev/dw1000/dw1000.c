@@ -102,6 +102,8 @@ static volatile bool tx_done; /* flag indicating the end of TX */
 
 static dwTime_t rxTime = {.full = 0};
 static dwTime_t tx_stamp = {.full = 0};
+static float fp_power, rx_power;
+
 /*---------------------------------------------------------------------------*/
 PROCESS(dw1000_process, "DW1000 driver");
 #if DEBUG
@@ -185,8 +187,12 @@ rx_ok_cb(const dwt_cb_data_t *cb_data)
     A = 121.74;
     N = dwt_read16bitoffsetreg(0x10, 2)>>4;
     C = dwt_read16bitoffsetreg(0x12, 6);
-    printf("First path power level = %lfdBm\n",10*log10((powf(f1,2)+powf(f2,2)+powf(f3,2))/powf(N,2))-A);
-    printf("Rx level = %lfdBm\n",10*log10(C*powf(2,17)/powf(N,2))-A);    
+
+    fp_power = 10*log10((powf(f1,2)+powf(f2,2)+powf(f3,2))/powf(N,2))-A;
+    rx_power = 10*log10(C*powf(2,17)/powf(N,2))-A;
+
+    printf("First path power level = %lfdBm\n", fp_power);
+    printf("Rx level = %lfdBm\n", rx_power);    
 
     data_len = cb_data->datalength - DW1000_CRC_LEN;
     /* Set the appropriate event flag */
@@ -605,7 +611,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 #ifdef UWB_TYPE_ANCHOR_CONFIG
         handleRxPacket(rxTime.full, packetbuf_dataptr(), data_len, tx_stamp.full); //data_len不包括2字节的crc
 #else
-        handleTagRxPacket(rxTime.full, packetbuf_dataptr(), data_len);
+        handleTagRxPacket(fp_power, rx_power, rxTime.full, packetbuf_dataptr(), data_len);
 #endif
         packetbuf_set_datalen(data_len);
 

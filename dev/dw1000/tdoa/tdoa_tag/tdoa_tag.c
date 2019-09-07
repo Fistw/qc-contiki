@@ -23,6 +23,8 @@
 #include "fang.h"
 #include "uwb_tdoa_anchor3.h"
 
+#include <math.h>
+
 static point_t tagCrd = {0,0,0,AGV_Z_AXIS_CONFIG};
 static tdoaEngineState_t engineState;
 
@@ -85,13 +87,230 @@ static int updateRemoteData(tdoaAnchorContext_t *anchorCtx, const void *payload)
   return (uint8_t *)anchorDataPtr - (uint8_t *)packet;
 }
 
-void handleTdoaPacket(uint64_t rxTime, const packet_t *prxPacket)
+static inline void createVector(point_t* pstart, point_t* pend, point_t* vector)
+{
+    vector->x = pend->x - pstart->x;
+    vector->y = pend->y - pstart->y;
+    vector->z = pend->z - pstart->z;
+}
+
+static inline float multipleVector(point_t* v1, point_t* v2)
+{
+    return (v1->x)*(v2->x)+(v1->y)*(v2->y)+(v1->z)*(v2->z);
+}
+
+void correctTimestamp(int64_t* ptime, float fpp, float rxp, tdoaAnchorContext_t* anchorCtx)
+{
+  float rx_fp = rxp - fpp;
+  float clk = anchorCtx->anchorInfo->clockCorrectionStorage.clockCorrection;
+  point_t tmp;
+  createVector(&tagCrd, &anchorCtx->anchorInfo->position, &tmp);
+  float dis = sqrtf(multipleVector(&tmp, &tmp));
+
+  if(rxp <= -86.218){ // node#0
+    if(fpp <= -96.212){ // node#1
+      if(dis <= 8.968){ // node#5
+        if(clk <= 1.0){ // node#7
+          if(rxp <= -89.747){ // node#9
+            if(dis <= 8.652){ // node#23
+              *ptime += 46; // node#93
+            }else{
+              *ptime += 95; // node#94
+            }
+          }else{
+            if(dis <= 8.818){ // node#24
+              if(rxp <= -88.545){ // node#69
+                *ptime += 187; // node#97
+              }else{
+                *ptime += 147; // node#98
+              }
+            }else{
+              *ptime += 220; // node#70
+            }
+          } 
+        }else{
+          if(dis <= 8.33){ // node#10
+            *ptime += 327; // node#79
+          }else{
+            *ptime += 390; // node#80
+          }
+        } 
+      }else{
+        if(fpp <= -103.733){ // node#8
+          if(rxp <= -89.347){ // node#13
+            if(clk <= 1.0){ // node#15
+              if(rxp <= -93.502){ // node#35
+                if(clk <= 1.0){ // node#49
+                  *ptime += 267; // node#59
+                }else{
+                  if(dis <= 11.765){ // node#60
+                    *ptime += 251; // node#61
+                  }else{
+                    *ptime += 320; // node#62
+                  }
+                }
+              }else{
+                if(dis <= 11.108){ // node#50
+                  if(rx_fp <= 18.502){ // node#51
+                    *ptime += 316; // node#55
+                  }else{
+                    *ptime += 254; // node#56
+                  }
+                }else{
+                  if(rxp <= -91.566){ // node#52
+                    if(fpp <= -110.77){ // node#67
+                      *ptime += 365; // node#85
+                    }else{
+                      *ptime += 433; // node#86
+                    }
+                  }else{
+                    *ptime += 338; // node#68
+                  }
+                }
+              }
+            }else{
+              if(dis <= 14.275){ // node#36
+                if(rx_fp <= 22.003){ // node#39
+                  if(rxp <= -94.831){ // node#63
+                    *ptime += 294; // node#87
+                  }else{
+                    *ptime += 252; // node#88
+                  }
+                }else{
+                  *ptime += 201; // node#64
+                }
+              }else{
+                if(clk <= 1.0){ // node#40
+                  *ptime += 336; // node#41
+                }else{
+                  if(dis <= 15.476){ // node#42
+                    *ptime += 201; // node#95
+                  }else{
+                    *ptime += 254; // node#96
+                  }
+                }
+              }
+            }
+          }else{
+            if(dis <= 10.465){ // node#16
+              if(rxp <= -87.766){ // node#43
+                if(fpp <= -112.49){ // node#47
+                  *ptime += 321; // node#73
+                }else{
+                  *ptime += 391; // node#74
+                }
+              }else{
+                *ptime += 452; // node#48
+              }
+            }else{
+              if(dis <= 11.363){ // node#44
+                *ptime += 246; // node#45
+              }else{
+                if(rx_fp <= 25.708){ // node#46
+                  *ptime += 429; // node#57
+                }else{
+                  *ptime += 339; // node#58
+                }
+              }
+            }
+          }
+        }else{
+          if(fpp <= -99.081){ // node#14
+            if(dis <= 11.765){ // node#27
+              if(dis <= 10.322){ // node#33
+                *ptime += 291; // node#81
+              }else{
+                if(dis <= 10.89){ // node#82
+                  *ptime += 206; // node#91
+                }else{
+                  *ptime += 241; // node#92
+                }
+              }
+            }else{
+              *ptime += 348; // node#34
+            }
+          }else{
+            *ptime += 152; // node#28
+          }
+        }
+      }
+    }else{
+      *ptime += 637; // node#6
+    }
+  }else{
+    if(clk <= 1.0){ // node#2
+      if(dis <= 4.924){ // node#3
+        if(dis <= 3.885){ // node#11
+          *ptime += 136; // node#37
+        }else{
+          if(rxp <= -79.643){ // node#38
+            *ptime += 201; // node#71
+          }else{ 
+            *ptime += 251; // node#72
+          }
+        }
+      }else{
+        if(rxp <= -79.543){ // node#12
+          if(fpp <= -95.688){ // node#17
+            if(rxp <= -83.664){ // node#19
+              if(dis <= 7.357){ // node#21
+                *ptime += 99; // node#53
+              }else{
+                *ptime += 185; // node#54
+              }
+            }else{
+              if(rx_fp <= 16.34){ // node#22
+                *ptime += 31; // node#29
+              }else{
+                if(dis <= 8.335){ // node#30
+                  if(rxp <= -81.596){ // node#31
+                    if(dis <= 6.411){ // node#75
+                      if(rx_fp <= 22.158){ // node#77
+                        *ptime += 115; // node#83
+                      }else{
+                        *ptime += 57; // node#84
+                      }
+                    }else{
+                      *ptime += 153; // node#78
+                    }
+                  }else{
+                    *ptime += 160; // node#76
+                  }
+                }else{
+                  *ptime += 58; // node#32
+                }
+              }
+            }
+          }else{
+            *ptime += 214; // node#20
+          }
+        }else{
+          *ptime += 13; // node#18
+        }
+      }
+    }else{
+      if(dis <= 4.016){ // node#4
+        *ptime += 121; // node#25
+      }else{
+        if(rx_fp <= 12.786){ // node#26
+          if(rx_fp <= 3.223){ // node#65
+            *ptime += -20.862; // node#89
+          }else{
+            *ptime += 6.109; // node#90
+          }
+        }else{
+          *ptime += 59; // node#66
+        }
+      }
+    }
+  }
+}
+
+void handleTdoaPacket(float fp_power, float rx_power, uint64_t rxTime, const packet_t *prxPacket)
 {
   const uint8_t anchorId = prxPacket->sourceAddress[0];
 
-  dwTime_t arrival = {.full = 0};
-  arrival.full = rxTime;
-  const int64_t rxAn_by_T_in_cl_T = arrival.full;
+  int64_t rxAn_by_T_in_cl_T = rxTime;
 
   const rangePacket3_t *packet = (rangePacket3_t *)prxPacket->payload;
 
@@ -103,13 +322,19 @@ void handleTdoaPacket(uint64_t rxTime, const packet_t *prxPacket)
 //    printf("tmp[%d]=%d ",i,tmp[i]);
   //统计收包率
   printf("Debug: get packet from %d, seqNr=%d, now is %u\n", anchorId, seqNr, clock_time());
-
+  printf("Debug: get packet from %d, txTimestamp=%llu\n", anchorId, txAn_in_cl_An);
   // process anchor packet in tag
   tdoaAnchorContext_t anchorCtx;
   uint32_t now_ms = clock_time();
   // using tdoa_storage to Get AnchorCtx for packet processing
-  tdoaEngineGetAnchorCtxForPacketProcessing(&engineState, anchorId, now_ms, &anchorCtx);
+  bool anchorCtxExist = tdoaEngineGetAnchorCtxForPacketProcessing(&engineState, anchorId, now_ms, &anchorCtx);
   tdoaStorageSetAnchorPosition(&anchorCtx, tmp[0]+tmp[1]*1e-2,tmp[2]+tmp[3]*1e-2,tmp[4]+tmp[5]*1e-2);
+  
+  // 决策树回归校正时间戳
+  if(!tagCrd.timestamp && anchorCtxExist)
+    correctTimestamp(&rxAn_by_T_in_cl_T, fp_power, rx_power, &anchorCtx);
+  printf("After Correction(rxTimestamp): %llu\n", rxAn_by_T_in_cl_T);
+
   // // 粗暴设置基站位置
   // if (anchorId == 1)
   // {
@@ -181,7 +406,7 @@ void handleAvoidPacket(uint32_t rxTime, const packet_t *prxPacket)
 
 }
 
-void handleTagRxPacket(uint64_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
+void handleTagRxPacket(float fp_power, float rx_power, uint64_t rxTime, const uint8_t *packetbuf, const uint16_t data_len)
 {
   int dataLength = data_len;
 
@@ -194,7 +419,7 @@ void handleTagRxPacket(uint64_t rxTime, const uint8_t *packetbuf, const uint16_t
 
   if (rxPacket.payload[0] == PACKET_TYPE_TDOA3)
   {
-    handleTdoaPacket(rxTime, &rxPacket);
+    handleTdoaPacket(fp_power, rx_power, rxTime, &rxPacket);
   }else if(rxPacket.payload[0] == PACKET_TYPE_AVOID){
     handleAvoidPacket(rxTime, &rxPacket);
   }else{
@@ -244,6 +469,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 //    // printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
 //  }
   fang_2D(tdoaMeasurement, &tagCrd);
+  tagCrd.timestamp = clock_time();
   printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
 // 人员安全避让功能
 #ifdef UWB_TYPE_PERSON_CONFIG
