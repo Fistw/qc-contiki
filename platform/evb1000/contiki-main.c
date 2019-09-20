@@ -157,6 +157,8 @@ main(void)
   nvic_init();
   rtc_init();
 
+  usartinit();
+
   /* Init Contiki Clock module */
   clock_init();
 

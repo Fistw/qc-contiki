@@ -7,6 +7,9 @@
 #include "board.h"
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
 /*---------------------------------------------------------------------------*/
 void
 rtc_init(void)
@@ -157,3 +160,98 @@ nvic_init(void)
    */
   NVIC_PriorityGroupConfig(NVIC_PriorityGroup_4);
 }
+
+
+/**
+  * @brief  Configures COM port.
+  * @param  USART_InitStruct: pointer to a USART_InitTypeDef structure that
+  *   contains the configuration information for the specified USART peripheral.
+  * @retval None
+  */
+void usartinit(void)
+{
+#if 1
+	USART_InitTypeDef USART_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	//使能USART4的时钟
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);
+
+	//使能USART2 GPIO 复用时钟
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
+
+	/* Enable GPIO clock */
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+
+	// UART4 setup
+	USART_InitStructure.USART_BaudRate = (115200);
+	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+	USART_InitStructure.USART_StopBits = USART_StopBits_1;
+	USART_InitStructure.USART_Parity = USART_Parity_No;
+	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+
+	USART_Init(UART4, &USART_InitStructure);
+
+	// UART4 TX pin setup
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	// UART4 RX pin setup
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+	// Enable UART4
+	USART_Cmd(UART4, ENABLE);
+#endif
+}
+
+void USART_putc(char c)
+{
+//	printf("USART_putc\n");
+//	printf("%c", c);
+	//while(!(USART2->SR & 0x00000040));
+	//USART_SendData(USART2,c);
+	/* e.g. write a character to the USART */
+	USART_SendData(UART4, c);
+
+	/* Loop until the end of transmission */
+	while (USART_GetFlagStatus(UART4, USART_FLAG_TXE) == RESET)	;
+}
+
+void USART_puts(const char *s)
+{
+	int i;
+//	printf("USART_puts\n");
+	for(i=0; s[i]!=0; i++)
+	{
+		USART_putc(s[i]);
+	}
+}
+
+void printf2(const char *format, ...)
+{
+	va_list list;
+	va_start(list, format);
+
+//	printf("printf2\n");
+
+	int len = vsnprintf(0, 0, format, list);
+	char *s;
+
+	s = (char *)malloc(len + 1);
+	vsprintf(s, format, list);
+
+	USART_puts(s);
+
+	free(s);
+	va_end(list);
+	return;
+}
+

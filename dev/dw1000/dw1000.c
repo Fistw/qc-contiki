@@ -102,6 +102,8 @@ static dwTime_t rxTime = {.full = 0};
 static dwTime_t regTxTime = {.full = 0};
 /*---------------------------------------------------------------------------*/
 PROCESS(dw1000_process, "DW1000 driver");
+//PROCESS(no_people_process, "No people");
+PROCESS(have_people_process, "Have people");
 #if DEBUG
 PROCESS(dw1000_dbg_process, "DW1000 dbg process");
 #endif
@@ -324,6 +326,8 @@ dw1000_init(void)
 
     /* Start DW1000 process */
     process_start(&dw1000_process, NULL);
+//    process_start(&no_people_process, NULL);
+    process_start(&have_people_process, NULL);
 #if DEBUG
     process_start(&dw1000_dbg_process, NULL);
 #endif /* DEBUG */
@@ -537,10 +541,40 @@ dw1000_set_object(radio_param_t param, const void *src, size_t size)
     }
     return RADIO_RESULT_NOT_SUPPORTED;
 }
+
+/*---------------------------------------------------------------------------*/
+
+
+PROCESS_THREAD(have_people_process, ev, data)
+{
+	static struct etimer noet;
+    PROCESS_BEGIN();
+
+    etimer_set(&noet, 50);
+    while (1)
+    {
+//        PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
+    	PROCESS_WAIT_EVENT();
+    	if(etimer_expired(&noet)) {
+//    		printf("00`\n");
+    		printf2("00`\n");
+        	etimer_restart(&noet);
+    	}
+    	else{
+        	etimer_restart(&noet);
+    	}
+    }
+
+    PROCESS_END();
+}
+
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(dw1000_process, ev, data)
 {
     PROCESS_BEGIN();
+
+
+    static struct etimer noet;
 
     /*PRINTF("dw1000_process: started\n"); */
 
@@ -548,7 +582,10 @@ PROCESS_THREAD(dw1000_process, ev, data)
     {
         PROCESS_YIELD_UNTIL(ev == PROCESS_EVENT_POLL);
 
-        PRINTF("dwr frame\n");
+//        PRINTF("dwr frame\n");
+//        printf("01a\n");
+        printf2("01a\n");
+        process_poll(&have_people_process);
 
         if (!frame_pending)
         {
@@ -585,6 +622,7 @@ PROCESS_THREAD(dw1000_process, ev, data)
 
     PROCESS_END();
 }
+
 /*---------------------------------------------------------------------------*/
 const struct radio_driver dw1000_driver =
 {

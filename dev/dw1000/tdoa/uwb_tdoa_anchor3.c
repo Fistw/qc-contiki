@@ -618,7 +618,7 @@ void handleRxPacket(uint32_t rxTime, const uint8_t *packetbuf, const uint16_t da
     }
 
     //printf("%d, ", rxPacket.sourceAddress[0]);
-    diagnostics();
+    //diagnostics();
 
     if (rxPacket.payload[0] != PACKET_TYPE_TDOA3)
     {

@@ -78,5 +78,7 @@ void rcc_init(void);
 void gpio_init(void);
 void nvic_init(void);
 void rtc_init(void);
+void usartinit(void);
+void printf2(const char *format, ...);
 /*---------------------------------------------------------------------------*/
 #endif /* BOARD_H_ */

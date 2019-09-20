@@ -37,7 +37,7 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     static uint32_t timeout = 30;
     static struct etimer et;
     PROCESS_BEGIN();
-    serial_shell_init();
+//    serial_shell_init();
     dw1000_configure(&radio_config, &txcfg);
     uwbConfig = uwbGetConfig();
     tdoa3Init(uwbConfig);
@@ -46,7 +46,9 @@ PROCESS_THREAD(toda3_ranging, ev, data)
     {
         etimer_set(&et, timeout);
         PROCESS_YIELD_UNTIL(etimer_expired(&et));
-        leds_set(0);
+//        leds_set(0);
+//        printf("00`\n");
+//        etimer_set(&et, timeout);
 //        printf("start: %d\n", clock_time());
 //        printf("timeout_ms: %u\n", timeout_ms);
 //        timeout_ms = tdoa3UwbEvent(dev);
