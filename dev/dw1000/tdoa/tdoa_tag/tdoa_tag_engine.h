@@ -6,7 +6,7 @@
 #define SPEED_OF_LIGHT 299792458.0
 #define UWB_TS_FREQ (499.2e6 * 128)
 
-typedef void (*tdoaEngineSendTdoaToEstimator)(tdoaMeasurement_t *tdoaMeasurement);
+typedef void (*tdoaEngineSendTdoaToEstimator)(tdoaMeasurement_t *tdoaMeasurement, int count);
 
 typedef struct
 {

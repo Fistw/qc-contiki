@@ -43,11 +43,11 @@ uint64_t truncateToAnchorTimeStamp(uint64_t fullTimeStamp)
     return fullTimeStamp & TRUNCATE_TO_ANCHOR_TS_BITMAP;
 }
 
-static void enqueueTDOA(tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, double* distanceDiff, tdoaEngineState_t *engineState)
+static void enqueueTDOA(int count, tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext_t *anchorBCtx, double* distanceDiff, tdoaEngineState_t *engineState)
 {
     int i;
-    tdoaMeasurement_t tdoas[3];
-    for(i = 0; i < 3; i++){
+    tdoaMeasurement_t tdoas[count];
+    for(i = 0; i < count; i++){
         point_t posA, posB;
         if (tdoaStorageGetAnchorPosition(&anchorACtx[i], &posA) && tdoaStorageGetAnchorPosition(anchorBCtx, &posB))
         {
@@ -66,7 +66,7 @@ static void enqueueTDOA(tdoaAnchorContext_t *anchorACtx, const tdoaAnchorContext
         }
         
     }
-    engineState->sendTdoaToEstimator(tdoas);
+    engineState->sendTdoaToEstimator((tdoaMeasurement_t*)tdoas, count);
 }
 
 static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
@@ -95,10 +95,10 @@ static bool updateClockCorrection(tdoaAnchorContext_t *anchorCtx, const int64_t 
     return sampleIsReliable;
 }
 
-static int64_t calcTDoA(const double locodeckTsFreq, double* tdoaDistDiff, const tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
+static int64_t calcTDoA(int count, const double locodeckTsFreq, double* tdoaDistDiff, const tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
 {   
     int i;
-    for(i = 0; i < 3; i++){
+    for(i = 0; i < count; i++){
         const uint8_t otherAnchorId = tdoaStorageGetId(otherAnchorCtx+i);
 
         const int64_t tof_Ar_to_An_in_cl_An = tdoaStorageGetTimeOfFlight(anchorCtx, otherAnchorId);
@@ -115,14 +115,14 @@ static int64_t calcTDoA(const double locodeckTsFreq, double* tdoaDistDiff, const
     // return timeDiffOfArrival_in_cl_T;
 }
 
-static double calcDistanceDiff(double* tdoaDistDiff, tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T, const double locodeckTsFreq)
+static double calcDistanceDiff(int count, double* tdoaDistDiff, tdoaAnchorContext_t *otherAnchorCtx, const tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T, const double locodeckTsFreq)
 {
     // const int64_t tdoa = calcTDoA(otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
     // return SPEED_OF_LIGHT * tdoa / locodeckTsFreq;
-    calcTDoA(locodeckTsFreq, tdoaDistDiff, otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
+    calcTDoA(count, locodeckTsFreq, tdoaDistDiff, otherAnchorCtx, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T);
 }
 
-static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext_t *otherAnchorCtxs, const tdoaAnchorContext_t *anchorCtx)
+static int findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext_t* otherAnchorCtxs, const tdoaAnchorContext_t *anchorCtx)
 {
     static uint8_t seqNr[REMOTE_ANCHOR_DATA_COUNT];
     static uint8_t id[REMOTE_ANCHOR_DATA_COUNT];
@@ -148,7 +148,7 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
     // An offset (updated for each call) is added to make sure we start at
     // different positions in the list and vary which candidate to choose
     int count = 0;
-    for (int i = offset; (i < (remoteCount + offset)) && (count < 3); i++)
+    for (int i = offset; i < (remoteCount + offset); i++)
     {
         uint8_t index = i % remoteCount;
         const uint8_t candidateAnchorId = id[index];
@@ -162,13 +162,7 @@ static bool findSuitableAnchor(tdoaEngineState_t *engineState, tdoaAnchorContext
         }
     }
 //    printf("count=%d\n",count);
-    if(count == 3){
-        return true;
-    }
-    else{
-        // otherAnchorCtxs->anchorInfo = 0;
-        return false;
-    }
+    return count;
 }
 
 bool tdoaEngineGetAnchorCtxForPacketProcessing(tdoaEngineState_t *engineState, const uint8_t anchorId, const uint32_t currentTime_ms, tdoaAnchorContext_t *anchorCtx)
@@ -184,6 +178,7 @@ bool tdoaEngineGetAnchorCtxForPacketProcessing(tdoaEngineState_t *engineState, c
     // }
 }
 
+//　修改取数据计算ＴＤＯＡ逻辑：取出全部数据用于计算冗余ＴＤＯＡ．
 void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t *anchorCtx, const int64_t txAn_in_cl_An, const int64_t rxAn_by_T_in_cl_T)
 {
     // bool timeIsGood = updateClockCorrection(anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, &engineState->stats);
@@ -193,16 +188,18 @@ void tdoaEngineProcessPacket(tdoaEngineState_t *engineState, tdoaAnchorContext_t
     {
         // engineState->stats.timeIsGood++;
         printf("TimeIsGood\n");
-        tdoaAnchorContext_t otherAnchorCtxs[3];
-        if (findSuitableAnchor(engineState, otherAnchorCtxs, anchorCtx))
+//        tdoaAnchorContext_t otherAnchorCtxs[3];
+        tdoaAnchorContext_t otherAnchorCtxs[REMOTE_ANCHOR_DATA_COUNT];
+        int count;
+        if ((count = findSuitableAnchor(engineState, otherAnchorCtxs, anchorCtx)) >= 3)
         {
 //            printf("found suitable anchor\n");
             // engineState->stats.suitableDataFound++;
             // 计算距离差
-            double tdoaDistDiffs[3];
-            calcDistanceDiff(tdoaDistDiffs, otherAnchorCtxs, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
+            double tdoaDistDiffs[count];
+            calcDistanceDiff(count, tdoaDistDiffs, otherAnchorCtxs, anchorCtx, txAn_in_cl_An, rxAn_by_T_in_cl_T, engineState->tsFreq);
             // 根据新的tdoa数据更新位置
-            enqueueTDOA(otherAnchorCtxs, anchorCtx, tdoaDistDiffs, engineState);
+            enqueueTDOA(count, otherAnchorCtxs, anchorCtx, tdoaDistDiffs, engineState);
         }else{
         	printf("Can't found suitable anchors\n");
         }

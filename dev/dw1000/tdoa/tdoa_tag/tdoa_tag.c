@@ -20,10 +20,11 @@
 #include "contiki.h"
 #include "estimator_kalman.h"
 
-#include "fang.h"
+#include "ls.h"
 #include "uwb_tdoa_anchor3.h"
 
 #include <math.h>
+#include <stdio.h>
 
 static point_t tagCrd = {0,0,0,AGV_Z_AXIS_CONFIG};
 static tdoaEngineState_t engineState;
@@ -458,7 +459,7 @@ void handleTagRxPacket(double fp_power, double rx_power, uint64_t rxTime, const 
 //   return tdoaStorageGetListOfActiveAnchorIds(engineState.anchorInfoArray, unorderedAnchorList, maxListSize, now_ms);
 // }
 
-static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
+static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement, int count)
 {
   printf("sendTdoaToEstimatorCallback is called\n");
   // estimatorKalman(&state, &sensors, clock_time(), tdoaMeasurement);
@@ -471,7 +472,7 @@ static void sendTdoaToEstimatorCallback(tdoaMeasurement_t *tdoaMeasurement)
 //    printf("Executed fang failed and taylor successed.\n");
 //    // printf("sendTdoaToEstimatorCallback: calculate tag coodination fault.\n");
 //  }
-  fang_2D(tdoaMeasurement, &tagCrd);
+  ls(count, tdoaMeasurement, &tagCrd);
   tagCrd.timestamp = clock_time();
   printf("The Coordinate of Tag is (%f, %f, %f) in timestamp: %u\n", tagCrd.x, tagCrd.y, tagCrd.z, tagCrd.timestamp);
 // 人员安全避让功能
